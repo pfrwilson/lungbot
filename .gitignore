@@ -1,1 +1,4 @@
 scratch
+.DS_store
+*.cpython
+*.pyc
