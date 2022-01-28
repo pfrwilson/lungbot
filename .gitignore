@@ -1,4 +1,10 @@
+
+scratch
+.DS_store
+*.cpython
+*.pyc
 .env
 env
 settings.json
 n0001.mha
+
