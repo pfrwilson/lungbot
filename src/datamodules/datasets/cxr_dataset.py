@@ -22,7 +22,7 @@ class CXRDataset(Dataset):
         self.idx2filepath = self.__get_indexing_splits(split)
         
     def __len__(self):
-        return len(self.metadata)
+        return len(self.idx2filepath)
     
     def __getitem__(self, idx):
         
