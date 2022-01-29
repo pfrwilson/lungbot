@@ -12,11 +12,6 @@ import SimpleITK as sitk
 import selective_search
 
 
-# Removed since it's in dataset class
-# image = sitk.ReadImage('n0001.mha')
-# image = sitk.GetArrayFromImage(image)
-# im1 = np.stack((image,)*3,-1).astype(int)
-# im2 = (im1 - image.min())/ (image.max()-image.min())
 
 boxes = selective_search.selective_search(im2, mode='single', random_sort=False)
 
