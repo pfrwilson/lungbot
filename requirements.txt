@@ -1,6 +1,6 @@
 torch==1.10.0
 pytorch-lightning==1.5.8
-torchvision==0.6.1
+torchvision
 pillow==8.3.2
 hydra-core==1.1.1
 pandas==1.3.4
@@ -9,3 +9,5 @@ scikit-learn==1.0.2
 selective_search
 SimpleITK
 einops
+scikit-image==0.14.2
+numpy==1.22.0
