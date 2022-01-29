@@ -13,13 +13,18 @@ SEEDS = {
     'val': 2
 }
 
+
 class CXRDataset(Dataset):
     
     def __init__(self, root, split='train', resample_val=False,
-                 ignore_negatives=False):
+                 ignore_negatives=True, transform=None, target_transform=None, 
+                 convert_to_float=True):
         
         self.root = root
         self.split = split
+        self.transform = transform
+        self.target_transform = target_transform
+        self.convert_to_float = convert_to_float
         
         self.metadata = pd.read_csv(
             os.path.join(root, 'metadata.csv'),
@@ -72,13 +77,17 @@ class CXRDataset(Dataset):
                 d.pop('img_name')
                 bounding_boxes.append(d)
         
-        label = {
-            'label': label, 
-            'bounding_boxes': bounding_boxes
-        }
+        if self.convert_to_float:
+            max_ = np.max(pixel_values)
+            min_ = np.min(pixel_values)
+            pixel_values = (pixel_values - min_)/(max_ - min_)
+        
+        if self.transform:
+            pixel_values = self.transform(pixel_values)
+        if self.target_transform:
+            bounding_boxes = self.target_transform(bounding_boxes)
     
-        return pixel_values, label      
-    
+        return pixel_values, bounding_boxes      
     
     @staticmethod
     def __read_mdh_to_numpy(filename: str):
