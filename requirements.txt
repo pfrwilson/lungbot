@@ -9,4 +9,4 @@ simple-ITK
 scikit-learn==1.0.2
 selective_search
 SimpleITK
-
+einops
