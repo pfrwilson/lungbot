@@ -7,6 +7,7 @@ import os
 from sklearn.model_selection import train_test_split
 import random
 import numpy as np
+from skimage.color import rgb2hsv
 
 SEEDS = {
     'test': 1, 
@@ -95,7 +96,16 @@ class CXRDataset(Dataset):
         img = sitk.ReadImage(filename)
         array = sitk.GetArrayFromImage(img)
         
-        return array        
+        return array
+
+    @staticmethod
+    def __convert_numpy_to_hsv(grayscale_array: np.ndarray):
+
+        stacked = np.stack((grayscale_array,)*3,-1).astype(int)
+        rgb = (stacked - grayscale_array.min())/ (grayscale_array.max()-grayscale_array.min())
+        hsv = rgb2hsv(rgb)
+
+        return hsv
     
     @staticmethod
     def __get_idx_df(root, resample_val):

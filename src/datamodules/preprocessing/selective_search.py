@@ -9,12 +9,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.patches as mpatches
 import SimpleITK as sitk
+import selective_search
 
-image = sitk.ReadImage('n0001.mha')
-image = sitk.GetArrayFromImage(image)
 
-im1 = np.stack((image,)*3,-1).astype(int)
-im2 = (im1 - image.min())/ (image.max()-image.min())
+# Removed since it's in dataset class
+# image = sitk.ReadImage('n0001.mha')
+# image = sitk.GetArrayFromImage(image)
+# im1 = np.stack((image,)*3,-1).astype(int)
+# im2 = (im1 - image.min())/ (image.max()-image.min())
 
 boxes = selective_search.selective_search(im2, mode='single', random_sort=False)
 
