@@ -8,3 +8,4 @@ env
 settings.json
 n0001.mha
 images
+.coverage
