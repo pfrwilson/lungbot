@@ -26,7 +26,6 @@ filtered_imgs['DoG_fine'] = exposure.equalize_hist(filters.difference_of_gaussia
     high_sigma=2,
 ))
 
-
 filtered_imgs['DoG_coarse'] = exposure.equalize_hist(filters.difference_of_gaussians(
     base_img, 
     low_sigma=3,
