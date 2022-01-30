@@ -3,8 +3,6 @@ from torch.utils.data import Dataset
 import SimpleITK as sitk
 import pandas as pd
 import os
-from sklearn.model_selection import train_test_split
-import random
 import numpy as np
 from skimage.color import rgb2hsv
 
