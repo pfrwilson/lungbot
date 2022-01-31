@@ -5,7 +5,7 @@ import numpy as np
 import skimage
 from skimage.exposure import rescale_intensity
 
-class CXRDataset(Dataset):
+class DummyCXRDataset(Dataset):
     
     def __len__(self): 
         return 1024
@@ -33,6 +33,7 @@ class CXRDataset(Dataset):
                 'x': x, 
                 'y': y
             })
+            
             
             img[x:x+w, y:y+h] = 1
             
