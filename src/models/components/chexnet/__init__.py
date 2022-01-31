@@ -10,7 +10,7 @@ CKPT_PATH = os.path.join(
 )
 N_CLASSES = 14
 
-def build_chexnet():
+def CheXNet():
             
     chexnet = DenseNet121(N_CLASSES)
 
@@ -36,7 +36,4 @@ def build_chexnet():
     chexnet.load_state_dict(ckpt['state_dict'])
 
     return chexnet
-
-chexnet = build_chexnet()
-
 
