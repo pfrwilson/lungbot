@@ -1,14 +1,19 @@
 
 from numpy import dtype
 import pytest
-from src.models.components.chexnet import build_chexnet
 from tests.conftest import sample_img
 import torch
 from torchvision.transforms import ToTensor
 import einops
 
 
+from src.models.components.chexnet import CheXNet
+from src.models.components.mlp import MLP
 
+
+"""
+Test that CheXNet instantiates and can be called
+"""
 @pytest.mark.parametrize('dtype', ['float', 'double'])
 def test_chexnet_forward(sample_img, dtype):
     """ 
@@ -22,7 +27,7 @@ def test_chexnet_forward(sample_img, dtype):
     
     img = einops.repeat(img, 'c h w -> 1 c h w')
      
-    chexnet = build_chexnet()
+    chexnet = CheXNet()
     
     if dtype == 'double':
         chexnet = chexnet.double()
@@ -32,3 +37,19 @@ def test_chexnet_forward(sample_img, dtype):
     assert out.shape == (1, 14)
     
     
+def test_mlp():
+    
+    b = 2     # batch_size
+    nroi = 64 # rois per batch
+    
+    mlp = MLP(
+        input_dim=10, 
+        hidden_size=10, 
+        output_dim=2
+    )
+    
+    sample_input = torch.randn((b, nroi, 10))
+    
+    out = mlp(sample_input)
+    
+    assert out.shape == (b, nroi, 2)
