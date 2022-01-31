@@ -9,4 +9,5 @@ SimpleITK
 einops
 scikit-image==0.19.1  
 numpy==1.22.0
+matplotlib
 
