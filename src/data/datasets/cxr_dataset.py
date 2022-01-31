@@ -18,6 +18,8 @@ class CXRDataset(Dataset):
                  ignore_negatives=True, transform=None, target_transform=None, 
                  convert_to_float=True):
         
+        super().__init__()
+        
         self.root = root
         self.split = split
         self.transform = transform
