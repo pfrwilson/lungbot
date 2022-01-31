@@ -2,12 +2,10 @@ import os
 
 import pytest
 
+ROOT = '/Users/paulwilson/data/node_21/cxr_images/proccessed_data'
 
-def data_root():
-    
-    # testing requires 
-    # $ export DATAROOT=/root/to/data
-    
-    return os.getenv('DATA_ROOT')
+@pytest.fixture
+def root():
 
+    return ROOT
 
