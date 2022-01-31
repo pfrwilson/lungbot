@@ -51,11 +51,15 @@ class CXRDataset(Dataset):
         
         
     def __len__(self):
-        return len(self.idx2filepath)
+        return len(self.idx_df)
     
     def __getitem__(self, idx):
         
-        img_name = self.idx_df.loc[idx, 'img_name']
+        try:
+            img_name = self.idx_df.loc[idx, 'img_name']
+        except KeyError:
+            raise IndexError    
+            
         item_metadata = self.metadata.loc[self.metadata.img_name == img_name]
         
         pixel_values = self.__read_mdh_to_numpy(
