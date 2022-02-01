@@ -53,3 +53,36 @@ def test_mlp():
     out = mlp(sample_input)
     
     assert out.shape == (b, nroi, 2)
+    
+    
+def test_bbox_regressor_instantiates():
+    
+    from src.models.components.bbox_regressor import BBoxRegressor
+    
+    b = 2
+    n = 64
+    input_dim = 32
+    
+    sample_input = torch.randn((b, n, input_dim))
+    
+    model = BBoxRegressor(input_dim, 16, 1)
+    
+    out_dict = model(sample_input)
+    
+    assert out_dict['transform_scores'].shape == (b, n, 1, 4)
+    
+    sample_box_proposals = torch.randn((b, n, 4))
+    
+    out_dict = model(sample_input, proposed_boxes=sample_box_proposals)
+    
+    assert out_dict['transform_scores'].shape == (b, n, 1, 4)
+    assert out_dict['proposed_boxes'].shape == (b, n, 1, 4)
+    assert out_dict['predicted_boxes'].shape == (b, n, 1, 4)
+    
+    
+def test_bbox_regressor_trains():
+    
+    from src.models.components.bbox_regressor import BBoxRegressor
+    from ..stubs.dataset_stubs import DummyBoxRegressionDataset
+    
+    ds = DummyBoxRegressionDataset()    

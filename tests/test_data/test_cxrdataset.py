@@ -3,9 +3,25 @@ import pytest
 import numpy as np
 from src.data.datasets.cxr_dataset import CXRDataset
 
-
 def test_dataset_instantiation(root):
+    
     ds = CXRDataset(root)
+    
+
+@pytest.mark.parametrize('expected_keys', 
+                         ['height', 'width', 'x', 'y', 'label'])
+def test_getitem(root, expected_keys):
+    
+    ds = CXRDataset(root)
+    
+    img, boxes = ds[0]
+    assert type(img) == np.ndarray    
+    assert type(boxes) == list 
+
+    for box_dict in boxes:
+        assert type(box_dict) == dict
+        assert expected_keys in box_dict.keys()
+    
     
     
 def test_len(root):
@@ -39,12 +55,18 @@ def test_dataset_runthrough(root):
     
     ds = CXRDataset(root)
     for im, labels in ds:
-        assert type(im) == np.ndarray
-        assert type(labels) == list
+        pass
         
 
-def test_dataset_with_positives(root):
+def test_dataset_ignore_positives(root):
     
     ds = CXRDataset(root, ignore_negatives=False)
     
     assert 0 in ds.idx_df['label'].value_counts().index
+    
+    ds = CXRDataset(root)
+    
+    assert 0 not in ds.idx_df['label'].value_counts().index
+    
+    
+    
