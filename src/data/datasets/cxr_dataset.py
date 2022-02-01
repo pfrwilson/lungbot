@@ -71,15 +71,11 @@ class CXRDataset(Dataset):
                 img_name)
         )
         
-        label = item_metadata.loc[item_metadata.index[0], 'label']
-        
         bounding_boxes = []
-        if label == 1:
-            for row in item_metadata.iloc:
-                d = dict(row)
-                d.pop('label')
-                d.pop('img_name')
-                bounding_boxes.append(d)
+        for row in item_metadata.iloc:
+            d = dict(row)
+            d.pop('img_name')
+            bounding_boxes.append(d)
         
         if self.convert_to_float:
             max_ = np.max(pixel_values)
