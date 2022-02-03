@@ -1,5 +1,6 @@
 
 import pytest
+import pandas as pd
 import numpy as np
 from src.data.datasets.cxr_dataset import CXRDataset
 
@@ -16,11 +17,8 @@ def test_getitem(root, expected_keys):
     
     img, boxes = ds[0]
     assert type(img) == np.ndarray    
-    assert type(boxes) == list 
-
-    for box_dict in boxes:
-        assert type(box_dict) == dict
-        assert expected_keys in box_dict.keys()
+    assert type(boxes) == pd.DataFrame
+    assert expected_keys in boxes.columns
     
     
     
