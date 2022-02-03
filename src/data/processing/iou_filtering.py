@@ -80,11 +80,11 @@ def compute_training_examples(true_boxes, proposed_boxes):
     iou_table = iou_table.loc[iou_table.max(axis='columns') >= 0.1]
     
     # label >0.5 iou as positive examples
-    proposed_boxes['labels']=pd.Series()
+    proposed_boxes.insert(len(proposed_boxes.columns), 'labels', pd.Series(dtype='float32'))
     proposed_boxes.loc[iou_table.max(axis='columns') >= 0.5, 'labels'] = 1
     proposed_boxes.loc[iou_table.max(axis='columns') < 0.5, 'labels'] = 0
     
-    matching_true_box_idx=pd.Series(index=proposed_boxes.index)
+    matching_true_box_idx=pd.Series(index=proposed_boxes.index, dtype='int32')
     
     matching_true_box_idx.loc[proposed_boxes['labels'] == 1] = \
         iou_table.idxmax(axis='columns').loc[proposed_boxes['labels'] == 1]
