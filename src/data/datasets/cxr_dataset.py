@@ -4,7 +4,7 @@ import SimpleITK as sitk
 import pandas as pd
 import os
 import numpy as np
-from skimage.color import rgb2hsv
+from skimage.color import rgb2hsv, gray2rgb
 
 SEEDS = {
     'test': 1, 
@@ -15,15 +15,13 @@ SEEDS = {
 class CXRDataset(Dataset):
     
     def __init__(self, root, split='train', resample_val=False,
-                 ignore_negatives=True, transform=None, target_transform=None, 
+                 ignore_negatives=True, 
                  convert_to_float=True):
         
         super().__init__()
         
         self.root = root
         self.split = split
-        self.transform = transform
-        self.target_transform = target_transform
         self.convert_to_float = convert_to_float
         
         self.metadata = pd.read_csv(
@@ -82,11 +80,9 @@ class CXRDataset(Dataset):
             min_ = np.min(pixel_values)
             pixel_values = (pixel_values - min_)/(max_ - min_)
         
-        if self.transform:
-            pixel_values = self.transform(pixel_values)
-        if self.target_transform:
-            bounding_boxes = self.target_transform(bounding_boxes)
-    
+        bounding_boxes = pd.DataFrame(bounding_boxes)
+        pixel_values = gray2rgb(pixel_values)
+        
         return pixel_values, bounding_boxes      
     
     def compute_box_statistics(self):
@@ -96,7 +92,7 @@ class CXRDataset(Dataset):
         
         all_boxes = []
         for _, bounding_boxes in self:
-            for bounding_box in bounding_boxes:
+            for bounding_box in bounding_boxes.iloc:
                 all_boxes.append(bounding_box)
 
         box_table = pd.DataFrame(all_boxes)
@@ -116,7 +112,29 @@ class CXRDataset(Dataset):
                 table[['x', 'y', 'width', 'height']].cov().values
             
         return statistics    
+    
+    def get_box_distribution(self):
+        """ Returns a function which can be called to 
+        sample a bounding box matching the statistics of the
+        true dataset bounding boxes"""
         
+        statistics = self.compute_box_statistics()
+        
+        def sample():
+            lung = np.random.randint(0, 2)
+            if lung == 0:
+                return np.random.multivariate_normal(
+                mean = statistics['left_lung']['mean'], 
+                cov = statistics['left_lung']['cov_matrix']
+            )
+            else:
+                return np.random.multivariate_normal(
+                mean = statistics['right_lung']['mean'], 
+                cov = statistics['right_lung']['cov_matrix']
+            )
+            
+        return sample
+    
     @staticmethod
     def __read_mdh_to_numpy(filename: str):
         
