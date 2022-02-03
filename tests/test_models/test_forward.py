@@ -80,9 +80,3 @@ def test_bbox_regressor_instantiates():
     assert out_dict['predicted_boxes'].shape == (b, n, 1, 4)
     
     
-def test_bbox_regressor_trains():
-    
-    from src.models.components.bbox_regressor import BBoxRegressor
-    from ..stubs.dataset_stubs import DummyBoxRegressionDataset
-    
-    ds = DummyBoxRegressionDataset()    
