@@ -89,6 +89,34 @@ class CXRDataset(Dataset):
     
         return pixel_values, bounding_boxes      
     
+    def compute_box_statistics(self):
+        if self.split != 'train':
+            raise ValueError('Computing statistics on non-training set' 
+                             'destroys statistical validity')
+        
+        all_boxes = []
+        for _, bounding_boxes in self:
+            for bounding_box in bounding_boxes:
+                all_boxes.append(bounding_box)
+
+        box_table = pd.DataFrame(all_boxes)
+        
+        box_tables = {
+            'left_lung': box_table.loc[box_table['x'] <= 512],
+            'right_lung': box_table.loc[box_table['x'] > 512]
+        }
+        
+        statistics = {}
+        for name, table in box_tables.items():
+            
+            statistics[name] = {}
+            statistics[name]['mean'] = \
+                table[['x', 'y', 'width', 'height']].mean().values
+            statistics[name]['cov_matrix'] = \
+                table[['x', 'y', 'width', 'height']].cov().values
+            
+        return statistics    
+        
     @staticmethod
     def __read_mdh_to_numpy(filename: str):
         
@@ -136,5 +164,6 @@ class CXRDataset(Dataset):
         )
         
         return idx_df
-        
-        
+    
+    
+    
