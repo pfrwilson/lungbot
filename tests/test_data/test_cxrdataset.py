@@ -69,4 +69,10 @@ def test_dataset_ignore_positives(root):
     assert 0 not in ds.idx_df['label'].value_counts().index
     
     
+def test_dataset_compute_statistics(root):
+    ds = CXRDataset(root)
     
+    statistics = ds.compute_box_statistics()
+    
+    assert statistics['left_lung']['mean'].shape == (4,)
+    assert statistics['right_lung']['cov_matrix'].shape == (4, 4)
