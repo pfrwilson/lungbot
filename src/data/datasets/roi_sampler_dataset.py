@@ -98,7 +98,7 @@ class ROISamplerDatasetForTraining(Dataset):
             img = torch.tensor(img)
             
             true_boxes = torch.tensor(
-                true_boxes[['x', 'y', 'width', 'height']].to_numpy()
+                true_boxes[['x', 'y', 'width', 'height', 'label']].to_numpy()
             )
 
             proposed_boxes = torch.tensor(

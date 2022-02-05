@@ -52,8 +52,9 @@ def test_resample_val(root, split, expected):
 def test_dataset_runthrough(root):
     
     ds = CXRDataset(root)
-    for im, labels in ds:
-        pass
+    for i, (im, labels) in enumerate(ds):
+        if i > 100:
+            break
         
 
 def test_dataset_ignore_positives(root):

@@ -10,18 +10,20 @@ class CXRBBoxDataModule(LightningDataModule):
     def __init__(self, root, batch_size=2, num_proposals_for_train=64, 
                  num_proposals_for_eval=1024):
         
+        super().__init__()
+        
         self.root = root
         self.batch_size = batch_size
         self.num_proposals_for_train = num_proposals_for_train
         self.num_proposals_for_eval = num_proposals_for_eval
         
-    def setup(self):
+    def setup(self, stage=None):
         
         self.box_distribution = CXRDataset(self.root).get_box_distribution()
         
         # training dataset 
         ds = CXRDataset(self.root, split='train')
-        sampler = RandomSampler(self.box_distribution, num_samples=100000)
+        sampler = RandomSampler(self.box_distribution, num_samples=300000)
         self.train_ds = ROISamplerDatasetForTraining(
             ds, sampler, self.num_proposals_for_train
         )
@@ -41,7 +43,7 @@ class CXRBBoxDataModule(LightningDataModule):
         )
         
     def train_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.batch_size)
+        return DataLoader(self.train_ds, batch_size=self.batch_size, num_workers=0)
     
     def val_dataloader(self):
         return DataLoader(self.val_ds, batch_size=self.batch_size)

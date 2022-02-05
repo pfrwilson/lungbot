@@ -109,7 +109,6 @@ class BBoxRegressor(nn.Module):
         )
         
         out_dict['predicted_boxes'] = predicted_boxes
-        out_dict['proposed_boxes'] = proposed_boxes
         
         return out_dict
     
