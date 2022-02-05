@@ -89,5 +89,29 @@ class RandomSampler(ROISamplerBase):
         
         return samples
     
+    
+class SlidingWindowSampler(ROISamplerBase):
+    
+    def __init__(self, window_sizes, strides):
+        self.window_sizes = window_sizes
+        self.strides = strides
+            
+    def sample(self, img):
+        
+        h, w, c = img.shape
+        
+        boxes = []
+        for window_size in self.window_sizes:
+            
+            x_coords = [ window_size * i for i in range(w // window_size )]
+            y_coords = [ window_size * i for i in range(h // window_size )]
+            
+            boxes.extend(
+                [ [x, y, x + window_size, y + window_size] for x in x_coords for y in y_coords]
+            )
+
+        return np.array(boxes)
+        
+    
 
 
