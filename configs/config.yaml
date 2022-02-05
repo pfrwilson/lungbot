@@ -1,0 +1,12 @@
+
+model: 
+  lambda_: 1
+  num_classes: 2 
+  freeze_chexnet: yes
+  optimizer: adam
+
+data: 
+  root: '/Users/paulwilson/data/node_21/cxr_images/proccessed_data'
+
+training:
+  max_epochs: 1
