@@ -21,7 +21,8 @@ def test_chexnet_forward(sample_img, dtype):
     and that with the appropriate adjustments, it works with either
     single or double precision
     """
-    img = ToTensor()(sample_img)
+    
+    img = torch.tensor(einops.rearrange(sample_img, 'h w c -> c h w'))
     if dtype == 'float':
         img = img.float()
     

@@ -19,4 +19,4 @@ def cxr_dataset(root):
 @pytest.fixture
 def sample_img(cxr_dataset):
     img = cxr_dataset[0][0]
-    return gray2rgb(img)
+    return img
