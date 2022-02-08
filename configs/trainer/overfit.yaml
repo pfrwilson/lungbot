@@ -2,8 +2,7 @@
 max_epochs: 100
 min_epochs: 10 
 accumulate_grad_batches: null
-default_root_dir: logs/
-overfit_batches: 10
+overfit_batches: 2
 accelerator: gpu
 gpus: 1
 
