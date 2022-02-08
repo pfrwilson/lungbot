@@ -76,7 +76,8 @@ def match_proposed_boxes_to_true(
     return {
         'matching_true_boxes': matching_true_boxes, 
         'proposed_boxes': proposed_boxes,
-        'labels': labels
+        'labels': labels,
+        'iou_scores': max_ious.values
     }
     
     
@@ -193,11 +194,14 @@ def select_training_examples(
     objectness_scores_for_loss = objectness_scores[indices_for_loss]
     labels_for_loss = labels[indices_for_loss]
 
+    iou_scores_for_loss = box_matching_output['iou_scores'][indices_for_loss]
+
     return {
         'regression_scores': reg_scores_for_loss, 
         'target_regression_scores': target_reg_scores_for_loss, 
         'objectness_scores': objectness_scores_for_loss, 
         'labels': labels_for_loss,
+        'iou_scores': iou_scores_for_loss
     }
     
     
