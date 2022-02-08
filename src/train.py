@@ -14,11 +14,13 @@ def train(config: DictConfig):
     rpn = RPNSystem(**config.rpn)
     
     datamodule = CXRDataModule(
-        gpus=1 if torch.cuda.is_available() else 0
         **config.data
     )
     
-    trainer = Trainer(**config.trainer)
+    trainer = Trainer(
+        gpus=1 if torch.cuda.is_available() else 0
+        **config.trainer
+    )
     
     trainer.fit(rpn, datamodule)
     
