@@ -16,7 +16,6 @@ from .object_detection_utils import (
 
 class RegionProposalNetwork(nn.Module):
 
-    
     def __init__(
         self, 
         image_input_size: int = 1024,
@@ -40,7 +39,9 @@ class RegionProposalNetwork(nn.Module):
             scales, 
             aspect_ratios
         )
-
+        
+        print(self.anchor_boxes.device, self.device)
+        
         self.sliding_window = nn.Conv2d(
             in_channels=feature_dim, 
             out_channels=hidden_dim, 
