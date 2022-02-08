@@ -1,7 +1,6 @@
 
-data: 
-  root: '/Users/paulwilson/data/node_21/cxr_images/proccessed_data'
-  batch_size: 1
+defaults:
+  - data: server.yaml
 
 trainer:
   max_epochs: 1
