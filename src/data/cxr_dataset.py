@@ -1,3 +1,4 @@
+import einops
 import torch
 from torch.utils.data import Dataset
 import SimpleITK as sitk
@@ -11,18 +12,22 @@ SEEDS = {
     'val': 2
 }
 
-
 class CXRDataset(Dataset):
     
-    def __init__(self, root, split='train', resample_val=False,
-                 ignore_negatives=True, 
-                 convert_to_float=True):
+    def __init__(
+            self, 
+            root, 
+            split='train', 
+            resample_val=False,
+            ignore_negatives=True, 
+            to_tensor=True
+        ):
         
         super().__init__()
         
         self.root = root
         self.split = split
-        self.convert_to_float = convert_to_float
+        self.to_tensor = to_tensor
         
         self.metadata = pd.read_csv(
             os.path.join(root, 'metadata.csv'),
@@ -49,7 +54,6 @@ class CXRDataset(Dataset):
         
         self.idx_df = idx_df.reset_index(drop=True)
         
-        
     def __len__(self):
         return len(self.idx_df)
     
@@ -75,13 +79,24 @@ class CXRDataset(Dataset):
             d.pop('img_name')
             bounding_boxes.append(d)
         
-        if self.convert_to_float:
-            max_ = np.max(pixel_values)
-            min_ = np.min(pixel_values)
-            pixel_values = (pixel_values - min_)/(max_ - min_)
+        max_ = np.max(pixel_values)
+        min_ = np.min(pixel_values)
+        pixel_values = (pixel_values - min_)/(max_ - min_)
         
         bounding_boxes = pd.DataFrame(bounding_boxes)
         pixel_values = gray2rgb(pixel_values)
+        
+        if self.to_tensor:
+            values = bounding_boxes[['x', 'y', 'width', 'height']].values
+            bounding_boxes = torch.tensor(values)
+        
+            pixel_values = einops.rearrange(
+                pixel_values, 'h w c -> c h w', 
+                h = 1024, 
+                w = 1024, 
+                c = 3
+            )
+            pixel_values = torch.tensor(pixel_values)
         
         return pixel_values, bounding_boxes      
     
@@ -142,15 +157,6 @@ class CXRDataset(Dataset):
         array = sitk.GetArrayFromImage(img)
         
         return array
-
-    @staticmethod
-    def __convert_numpy_to_hsv(grayscale_array: np.ndarray):
-
-        stacked = np.stack((grayscale_array,)*3,-1).astype(int)
-        rgb = (stacked - grayscale_array.min())/ (grayscale_array.max()-grayscale_array.min())
-        hsv = rgb2hsv(rgb)
-
-        return hsv
     
     @staticmethod
     def __get_idx_df(root, resample_val):

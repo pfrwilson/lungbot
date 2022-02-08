@@ -35,5 +35,5 @@ def CheXNet():
     
     chexnet.load_state_dict(ckpt['state_dict'])
 
-    return chexnet
+    return chexnet.densenet121.features
 
