@@ -1,12 +1,26 @@
 
-model: 
-  lambda_: 1
-  num_classes: 2 
-  freeze_chexnet: yes
-  optimizer: adam
-
 data: 
   root: '/Users/paulwilson/data/node_21/cxr_images/proccessed_data'
+  batch_size: 1
 
-training:
+trainer:
   max_epochs: 1
+  accumulate_grad_batches: 32
+  default_root_dir: logs/
+
+rpn: 
+  scales: 
+    - .5
+    - 1
+    - 2 
+    - .25
+    - 1.5
+  aspect_ratios: 
+    - 1 
+  freeze_chexnet: yes
+  lambda_: 1.0
+  nms_iou_threshold: 0.5
+  num_training_examples_per_image: 4
+  min_num_positive_examples: 2
+  lr: 1e-4
+
