@@ -1,26 +1,8 @@
 
 defaults:
-  - data: server.yaml
+  - _self_
+  - data: server
+  - trainer: default
+  - model: default
 
-trainer:
-  max_epochs: 1
-  accumulate_grad_batches: 1
-  default_root_dir: logs/
-  overfit_batches: 1
-
-rpn: 
-  scales: 
-    - .5
-    - 1
-    - 2 
-    - .25
-    - 1.5
-  aspect_ratios: 
-    - 1 
-  freeze_chexnet: yes
-  lambda_: 1.0
-  nms_iou_threshold: 0.5
-  num_training_examples_per_image: 4
-  min_num_positive_examples: 2
-  lr: 1e-5
-
+print_config: yes

@@ -1,0 +1,17 @@
+rpn: 
+  scales: 
+    - .5
+    - 1
+    - 2 
+    - .25
+    - 1.5
+  aspect_ratios: 
+    - 1 
+  freeze_chexnet: no
+  lambda_: 1.0
+  nms_iou_threshold: 0.5
+  num_training_examples_per_image: 64
+  min_num_positive_examples: 3
+  positivity_threshold: 0.4
+  negativity_threshold: 0.05
+  lr: 1e-4
