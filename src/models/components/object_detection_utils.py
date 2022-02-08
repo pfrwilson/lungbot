@@ -90,6 +90,8 @@ def boxreg_transform(regression_scores, anchor_boxes, in_fmt='xywh'):
     """
     
     # the transform requires 'cxcywh' format:
+    print(anchor_boxes.device)
+    
     anchor_boxes = ops.box_convert(anchor_boxes, in_fmt=in_fmt, out_fmt='cxcywh')
     
     x_a = anchor_boxes[:, 0]
