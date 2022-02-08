@@ -40,7 +40,7 @@ class RegionProposalNetwork(nn.Module):
             aspect_ratios
         )
         
-        print(self.anchor_boxes.device, self.device)
+        print(self.anchor_boxes.device)
         
         self.sliding_window = nn.Conv2d(
             in_channels=feature_dim, 
