@@ -8,6 +8,8 @@ from torch.nn import functional as F
 from typing import List
 from itertools import product
 
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 from .object_detection_utils import (
     boxreg_transform, 
     inverse_boxreg_transform, 
@@ -39,8 +41,6 @@ class RegionProposalNetwork(nn.Module):
             scales, 
             aspect_ratios
         )
-        
-        print(self.anchor_boxes.device)
         
         self.sliding_window = nn.Conv2d(
             in_channels=feature_dim, 
@@ -315,5 +315,5 @@ class RegionProposalNetwork(nn.Module):
             n1=n1, n2=n2, k=k, four=four
         )
         
-        return anchor_boxes
+        return anchor_boxes.to(DEVICE)
         
