@@ -7,5 +7,6 @@ defaults:
   - machine: server
   - mode: default
   - metrics: default
+  - optimizer: default
 
 print_config: yes
