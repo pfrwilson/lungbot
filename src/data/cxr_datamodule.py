@@ -3,8 +3,9 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
 from typing import List, Optional
 import torch
-from .cxr_dataset import CXRDataset
+from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 
+from .cxr_dataset import CXRDataset
 
 def collate_items(items: List[torch.Tensor]):
     
@@ -29,12 +30,21 @@ class CXRDataModule(LightningDataModule):
         self.root = root
         self.batch_size = batch_size
         self.collate_fn = collate_items
+        self.transform = Compose([
+            Resize(1024), 
+            ToTensor(), 
+            Normalize([0.485, 0.456, 0.406],
+                                            [0.229, 0.224, 0.225])
+        ])
         
     def setup(self, stage: Optional[str] = None) -> None:
         
-        self.train_ds = CXRDataset(self.root, split='train')
-        self.val_ds = CXRDataset(self.root, split = 'val')
-        self.test_ds = CXRDataset(self.root, split='test')
+        self.train_ds = CXRDataset(self.root, split='train',
+                                   transform=self.transform)
+        self.val_ds = CXRDataset(self.root, split = 'val',
+                                 transform=self.transform)
+        self.test_ds = CXRDataset(self.root, split='test', 
+                                  transform=self.transform)
 
     def train_dataloader(self):
         return DataLoader(
