@@ -49,8 +49,8 @@ class RPNSystem(LightningModule):
         
         self.loss_fn = RCNNLoss(lambda_=lambda_)
     
-        for module in self.modules():
-            module = module.double()
+        #for module in self.modules():
+        #    module = module.double()
     
         self.nms_iou_threshold = torch.tensor(nms_iou_threshold).double()
         self.num_training_examples_per_images=num_training_examples_per_image

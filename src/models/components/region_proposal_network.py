@@ -143,7 +143,7 @@ class RegionProposalNetwork(nn.Module):
             b=b, h=h, w=w, k=k, four=4
         )
         
-        proposed_boxes = proposed_boxes.double()
+        #proposed_boxes = proposed_boxes.double()
         
         return {
             'proposed_boxes': proposed_boxes, 
