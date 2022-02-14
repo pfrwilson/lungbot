@@ -4,6 +4,7 @@ from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
 from torchmetrics.detection.map import MeanAveragePrecision
 import torch
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 from .components.chexnet import CheXNet
 from .components.region_proposal_network import RegionProposalNetwork
@@ -25,7 +26,9 @@ class RPNSystem(LightningModule):
         min_num_positive_examples = 4,
         positivity_threshold = 0.7, 
         negativity_threshold = 0.5,
-        lr = 1e-3
+        lr = 1e-3,
+        optimizer_config = None,
+        lr_scheduler_config = None,
     ):
 
         super().__init__()
@@ -58,8 +61,23 @@ class RPNSystem(LightningModule):
 
         self.metrics = metrics
 
+        self.lr_scheduler_config=lr_scheduler_config
+
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), self.lr)
+        
+        optim = torch.optim.Adam(self.parameters(), self.lr)
+        
+        scheduler = CosineAnnealingWarmRestarts(
+            optim, 
+            T_0=5, 
+        )
+        
+        return {
+            'optimizer': optim, 
+            'lr_scheduler': {
+                'scheduler': scheduler
+            }
+        }
 
     def training_step(self, batch, batch_idx):
     
