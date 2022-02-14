@@ -9,10 +9,13 @@ from .components.chexnet import CheXNet
 from .components.region_proposal_network import RegionProposalNetwork
 from .components.rcnn_loss import RCNNLoss
 
+from .metric import DetectionMetric
+
 class RPNSystem(LightningModule):
     
     def __init__(
         self, 
+        metrics, 
         scales = [.5, 1, 2],
         aspect_ratios = [1, 1.5, .66], 
         freeze_chexnet = True, 
@@ -20,6 +23,8 @@ class RPNSystem(LightningModule):
         nms_iou_threshold = 0.5, 
         num_training_examples_per_image = 16, 
         min_num_positive_examples = 4,
+        positivity_threshold = 0.7, 
+        negativity_threshold = 0.5,
         lr = 1e-3
     ):
 
@@ -47,9 +52,11 @@ class RPNSystem(LightningModule):
         self.nms_iou_threshold = torch.tensor(nms_iou_threshold).double()
         self.num_training_examples_per_images=num_training_examples_per_image
         self.min_num_positive_examples=min_num_positive_examples
+        self.positivity_threshold=positivity_threshold
+        self.negativity_threshold=negativity_threshold
         self.lr = lr
 
-        self.map = MeanAveragePrecision(box_format='xywh')
+        self.metrics = metrics
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), self.lr)
@@ -64,16 +71,19 @@ class RPNSystem(LightningModule):
         out_dict = self.rpn.propose_boxes(feature_maps)
         
         loss = 0
+        
         for idx in range(batch_size):
             
             training_examples = self.rpn.select_training_examples(
                 out_dict['proposed_boxes'][idx], 
-                out_dict['anchor_boxes'][idx],
+                self.rpn.anchor_boxes,
                 out_dict['regression_scores'][idx],
                 out_dict['objectness_scores'][idx],
                 true_boxes[true_box_indices == idx],
                 num_training_examples=self.num_training_examples_per_images,
                 min_num_positives=self.min_num_positive_examples, 
+                positivity_threshold=self.positivity_threshold, 
+                negativity_threshold=self.negativity_threshold, 
             )
 
             loss += self.loss_fn(
@@ -83,8 +93,15 @@ class RPNSystem(LightningModule):
                 training_examples['labels']
             )
             
-            self.log('positives', len(training_examples['labels'][training_examples['labels'] == 1]), 
-                     prog_bar=True)
+            self.metrics.update(
+                training_examples['objectness_scores'],
+                training_examples['iou_scores'], 
+            )
+            
+        metrics = self.metrics.compute()
+        
+        for key in metrics.keys():  
+            self.log(key, metrics[key], prog_bar=True, logger=True)
             
         return loss
     
@@ -97,9 +114,6 @@ class RPNSystem(LightningModule):
         
         out_dict = self.rpn.propose_boxes(feature_maps)
         
-        preds = []
-        targets = []
-        
         for idx in range(batch_size):
             
             true_boxes_for_item = true_boxes[true_box_indices == idx]
@@ -114,66 +128,65 @@ class RPNSystem(LightningModule):
             )
             
             proposed_boxes = nms_output['proposed_boxes']
-            object_probs = nms_output['object_probs']
+            objectness_scores = nms_output['objectness_scores']
             
-            preds.append({
-                'boxes': proposed_boxes, 
-                'scores': object_probs, 
-                'labels': torch.IntTensor([0]*len(proposed_boxes))
-            })
-            
-            targets.append({
-                'boxes': true_boxes_for_item, 
-                'labels': torch.IntTensor([0]*len(true_boxes_for_item))
-            })
-            
-        map = self.map(preds, targets)['map']
-        
-        self.log('mean_average_precision', map, prog_bar=True)
-        
-    def test_step(self, batch, batch_idx):
-        
-        pixel_values, true_boxes, true_box_indices = batch
-        batch_size = pixel_values.shape[0]
- 
-        feature_maps = self.chexnet(pixel_values)
-        
-        out_dict = self.rpn.propose_boxes(feature_maps)
-        
-        preds = []
-        targets = []
-        
-        for idx in range(batch_size):
-            
-            true_boxes_for_item = true_boxes[true_box_indices == idx]
-            
-            proposed_boxes = out_dict['proposed_boxes'][idx]
-            objectness_scores = out_dict['objectness_scores'][idx]
-            
-            nms_output = self.rpn.apply_nms_to_region_proposals(
-                proposed_boxes, 
+            self.metrics.update(
                 objectness_scores,
-                iou_threshold=self.nms_iou_threshold
+                proposed_boxes=proposed_boxes,
+                true_boxes=true_boxes_for_item
             )
-            
-            proposed_boxes = nms_output['proposed_boxes']
-            object_probs = nms_output['object_probs']
-            
-            preds.append({
-                'boxes': proposed_boxes, 
-                'scores': object_probs, 
-                'labels': torch.IntTensor([0]*len(proposed_boxes))
-            })
-            
-            targets.append({
-                'boxes': true_boxes_for_item, 
-                'labels': torch.IntTensor([0]*len(true_boxes_for_item))
-            })
-            
-        map = self.map(preds, targets)['map']
         
-        self.log('mean_average_precision', map, prog_bar=True)
+        metrics = self.metrics.compute()
         
-    
+        for key in metrics.keys():  
+            self.log(key, metrics[key], prog_bar=True, logger=True)
             
+    def on_epoch_end(self) -> None:
+        self.metrics.reset()
             
+    #def test_step(self, batch, batch_idx):
+    #    
+    #    pixel_values, true_boxes, true_box_indices = batch
+    #    batch_size = pixel_values.shape[0]
+ #
+    #    feature_maps = self.chexnet(pixel_values)
+    #    
+    #    out_dict = self.rpn.propose_boxes(feature_maps)
+    #    
+    #    preds = []
+    #    targets = []
+    #    
+    #    for idx in range(batch_size):
+    #        
+    #        true_boxes_for_item = true_boxes[true_box_indices == idx]
+    #        
+    #        proposed_boxes = out_dict['proposed_boxes'][idx]
+    #        objectness_scores = out_dict['objectness_scores'][idx]
+    #        
+    #        nms_output = self.rpn.apply_nms_to_region_proposals(
+    #            proposed_boxes, 
+    #            objectness_scores,
+    #            iou_threshold=self.nms_iou_threshold
+    #        )
+    #        
+    #        proposed_boxes = nms_output['proposed_boxes']
+    #        object_probs = nms_output['object_probs']
+    #        
+    #        preds.append({
+    #            'boxes': proposed_boxes, 
+    #            'scores': object_probs, 
+    #            'labels': torch.IntTensor([0]*len(proposed_boxes))
+    #        })
+    #        
+    #        targets.append({
+    #            'boxes': true_boxes_for_item, 
+    #            'labels': torch.IntTensor([0]*len(true_boxes_for_item))
+    #        })
+    #        
+    #    map = self.map(preds, targets)['map']
+    #    
+    #    self.log('mean_average_precision', map, prog_bar=True)
+    #    
+    #
+    #        
+    #        
