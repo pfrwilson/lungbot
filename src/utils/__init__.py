@@ -13,7 +13,7 @@ def print_config(
     fields: Sequence[str] = (
         "trainer",
         "model",
-        "datamodule",
+        "data",
         "callbacks",
         "logger",
         "test_after_training",
