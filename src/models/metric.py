@@ -18,13 +18,11 @@ class DetectionMetric(Metric, ABC):
         self, 
         prob_threshold_for_detection=0.5, 
         iou_threshold_for_detection=0.5, 
-        metrics = None
     ):
         super().__init__()
         
         self.prob_threshold_for_detection=prob_threshold_for_detection
         self.iou_threshold_for_detection=iou_threshold_for_detection
-        self.metrics = metrics
         
         self.add_state('true_positives', default=torch.tensor(0))
         self.add_state('true_negatives', default=torch.tensor(0))
@@ -92,8 +90,6 @@ class DetectionMetric(Metric, ABC):
             total_proposals = self.true_positives + self.false_positives + self.true_negatives + self.false_negatives
         )
         
-        return dict(
-            [ (metric, all_metrics[metric]) for metric in self.metrics]
-        )
+        return all_metrics
 
     
