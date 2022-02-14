@@ -9,10 +9,10 @@ rpn:
   aspect_ratios: 
     - 1 
   freeze_chexnet: no
-  lambda_: 1.0
+  lambda_: 10
   nms_iou_threshold: 0.5
   
-  num_training_examples_per_image: 128
+  num_training_examples_per_image: 32
   min_num_positive_examples: 4
   
   positivity_threshold: 0.4
