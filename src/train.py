@@ -8,10 +8,15 @@ import torch
 
 from .data import CXRDataModule
 from .models import RPNSystem
+from .models.metric import DetectionMetric
 
 def train(config: DictConfig): 
     
-    rpn = RPNSystem(**config.model.rpn)
+    metric = DetectionMetric(
+        **config.metrics
+    )
+    
+    rpn = RPNSystem(metric, **config.model.rpn)
     
     datamodule = CXRDataModule(
         **config.data
