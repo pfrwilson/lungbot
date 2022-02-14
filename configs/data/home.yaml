@@ -1,3 +1,3 @@
 
-root: /home/paulw/data/node-21/proccessed_data
-batch_size: 32
+root: /Users/paulwilson/data/node_21/cxr_images/proccessed_data
+batch_size: 1

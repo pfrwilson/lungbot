@@ -1,0 +1,7 @@
+# @package _global_
+
+data: 
+  root: '/home/paulw/data/node-21/proccessed_data'
+
+trainer: 
+  default_root_dir: '/home/paulw'

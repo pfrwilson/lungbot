@@ -1,8 +1,11 @@
 
 defaults:
   - _self_
-  - data: server
+  - data: default
   - trainer: default
   - model: default
+  - machine: server
+  - mode: default
+  - metrics: default
 
 print_config: yes

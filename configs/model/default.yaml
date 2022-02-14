@@ -1,3 +1,7 @@
+
+metrics: 
+  - 
+
 rpn: 
   scales: 
     - .5
@@ -10,8 +14,8 @@ rpn:
   freeze_chexnet: no
   lambda_: 1.0
   nms_iou_threshold: 0.5
-  num_training_examples_per_image: 64
-  min_num_positive_examples: 3
+  num_training_examples_per_image: 32
+  min_num_positive_examples: 4
   positivity_threshold: 0.4
   negativity_threshold: 0.05
   lr: 1e-4
