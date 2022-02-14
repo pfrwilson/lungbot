@@ -71,7 +71,7 @@ class RPNSystem(LightningModule):
             optim, 
             T_0=5, 
         )
-        
+
         return {
             'optimizer': optim, 
             'lr_scheduler': {
@@ -119,7 +119,7 @@ class RPNSystem(LightningModule):
         metrics = self.metrics.compute()
         
         for key in metrics.keys():  
-            self.log(key, metrics[key], prog_bar=True, logger=True)
+            self.log(f'train/{key}', metrics[key], prog_bar=True, logger=True)
             
         return loss
     
@@ -157,7 +157,7 @@ class RPNSystem(LightningModule):
         metrics = self.metrics.compute()
         
         for key in metrics.keys():  
-            self.log(key, metrics[key], prog_bar=True, logger=True)
+            self.log(f'val/{key}', metrics[key], prog_bar=True, logger=True)
             
     def on_epoch_end(self) -> None:
         self.metrics.reset()
