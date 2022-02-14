@@ -26,6 +26,7 @@ class RegionProposalNetwork(nn.Module):
         hidden_dim: int = 256,
         scales: List[float] = None,
         aspect_ratios: List[float] = None, 
+        nms_threshold: float = 0.7
     ):  
         super().__init__()
         
@@ -80,8 +81,8 @@ class RegionProposalNetwork(nn.Module):
         self.boxreg_transform = boxreg_transform
         self.inverse_boxreg_transfrom = inverse_boxreg_transform
         self.select_training_examples = select_training_examples
-    
-    
+        
+        
     def propose_boxes(self, in_feature_map):
         
         b, feature_dim, H, W = in_feature_map.shape
@@ -94,7 +95,7 @@ class RegionProposalNetwork(nn.Module):
         # expand anchor boxes into batch dimension
         anchor_boxes = einops.repeat(
             self.anchor_boxes,
-            ' h w k four -> b h w k four ', 
+            ' n_boxes four -> b n_boxes four ', 
             b=b
         )
         
@@ -108,7 +109,7 @@ class RegionProposalNetwork(nn.Module):
         
         anchor_boxes = einops.rearrange(
             anchor_boxes,  
-            'b h w k four -> ( b h w k ) four'
+            'b n_boxes four -> ( b n_boxes ) four'
         )
         
         objectness_scores = einops.rearrange(
@@ -309,11 +310,11 @@ class RegionProposalNetwork(nn.Module):
 
         anchor_boxes = ops.box_convert( anchor_boxes, 'xyxy', 'xywh')
 
-        anchor_boxes = einops.rearrange(
-            anchor_boxes,
-            '( n1 n2 k ) four -> n1 n2 k four', 
-            n1=n1, n2=n2, k=k, four=four
-        )
+        #anchor_boxes = einops.rearrange(
+        #    anchor_boxes,
+        #    '( n1 n2 k ) four -> n1 n2 k four', 
+        #    n1=n1, n2=n2, k=k, four=four
+        #)
         
         return anchor_boxes.to(DEVICE)
         
