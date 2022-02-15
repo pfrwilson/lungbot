@@ -1,1 +1,1 @@
-from .rpn_module import RPNSystem
+from .rpn_module import RPNModule

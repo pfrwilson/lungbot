@@ -12,11 +12,10 @@ from .components.rcnn_loss import RCNNLoss
 
 from .metric import DetectionMetric
 
-class RPNSystem(LightningModule):
+class RPNModule(LightningModule):
     
     def __init__(
         self, 
-        metrics, 
         scales = [.5, 1, 2],
         aspect_ratios = [1, 1.5, .66], 
         freeze_chexnet = True, 
@@ -25,10 +24,8 @@ class RPNSystem(LightningModule):
         num_training_examples_per_image = 16, 
         min_num_positive_examples = 4,
         positivity_threshold = 0.7, 
-        negativity_threshold = 0.5,
+        negativity_threshold = 0.3,
         lr = 1e-3,
-        optimizer_config = None,
-        lr_scheduler_config = None,
     ):
 
         super().__init__()
@@ -49,9 +46,6 @@ class RPNSystem(LightningModule):
         
         self.loss_fn = RCNNLoss(lambda_=lambda_)
     
-        #for module in self.modules():
-        #    module = module.double()
-    
         self.nms_iou_threshold = torch.tensor(nms_iou_threshold).double()
         self.num_training_examples_per_images=num_training_examples_per_image
         self.min_num_positive_examples=min_num_positive_examples
@@ -59,9 +53,8 @@ class RPNSystem(LightningModule):
         self.negativity_threshold=negativity_threshold
         self.lr = lr
 
-        self.metrics = metrics
+        self.metrics = DetectionMetric()
 
-        self.lr_scheduler_config=lr_scheduler_config
 
     def configure_optimizers(self):
         
