@@ -1,7 +1,0 @@
-
-metrics:
-  - precision
-  - recall
-
-prob_threshold_for_detection: 0.5
-iou_threshold_for_detection: 0.5

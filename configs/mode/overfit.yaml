@@ -1,9 +1,0 @@
-# @package _global_
-
-trainer:
-  overfit_batches: 3
-  
-model:
-  rpn:
-    num_training_examples_per_image: 8
-    min_num_positive_examples: 2

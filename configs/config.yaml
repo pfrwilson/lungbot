@@ -5,9 +5,9 @@ defaults:
   - trainer: default
   - model: default
   - machine: server
-  - mode: default
-  - metrics: default
+  - mode: train_rpn
   - optimizer: default
+  - logger: wandb
 
 print_config: yes
 disable_warnings: yes
