@@ -9,11 +9,11 @@ from pydantic import BaseModel
 from typing import Union, Sequence
 from dataclasses import dataclass
 
+from .components.object_detection import DetectionOutput
 from .components.chexnet import CheXNet
 from .components.region_proposal_network import RegionProposalNetwork, RPNConfig
 from .objectives.rcnn_loss import RCNNLoss
-
-from .metric import DetectionMetric
+from .objectives.metric import DetectionMetric
 
 
 @dataclass
@@ -32,12 +32,11 @@ class RPNModuleConfig:
 
 class RPNModule(LightningModule):
     
-    def __init__(
-        self, 
-        config: RPNModuleConfig
-    ):
+    def __init__(self, config: RPNModuleConfig):
 
         super().__init__()
+
+        self.config = config
 
         self.rpn = RegionProposalNetwork(
             RPNConfig(
@@ -58,7 +57,6 @@ class RPNModule(LightningModule):
         
         self.loss_fn = RCNNLoss(lambda_=config.lambda_)
     
-        self.nms_iou_threshold = torch.tensor(config.nms_iou_threshold).double()
         self.num_training_examples_per_images=config.num_training_examples_per_image
         self.min_num_positive_examples=config.min_num_positive_examples
         self.positivity_threshold=config.positivity_threshold
@@ -84,132 +82,98 @@ class RPNModule(LightningModule):
             }
         }
 
+
     def training_step(self, batch, batch_idx):
     
-        pixel_values, true_boxes, true_box_indices = batch
-        batch_size = pixel_values.shape[0]
-            
-        feature_maps = self.chexnet(pixel_values)
-        
-        out_dict = self.rpn.propose_boxes(feature_maps)
-        
         loss = 0
         
-        for idx in range(batch_size):
+        for item in batch:
             
-            training_examples = self.rpn.select_training_examples(
-                out_dict['proposed_boxes'][idx], 
-                self.rpn.anchor_boxes,
-                out_dict['regression_scores'][idx],
-                out_dict['objectness_scores'][idx],
-                true_boxes[true_box_indices == idx],
-                num_training_examples=self.num_training_examples_per_images,
-                min_num_positives=self.min_num_positive_examples, 
-                positivity_threshold=self.positivity_threshold, 
-                negativity_threshold=self.negativity_threshold, 
+            pixel_values, true_boxes = item
+        
+            feature_maps = self.chexnet(pixel_values)
+            
+            detection_output = self.rpn(feature_maps, training=True)
+        
+            training_batch = self.rpn.get_training_batch(
+                detection_output, 
+                true_boxes, 
+                min_num_positives=self.config.min_num_positive_examples, 
+                positivity_threshold=self.config.positivity_threshold, 
+                negativity_threshold=self.config.negativity_threshold
             )
-
-            loss += self.loss_fn(
-                training_examples['objectness_scores'], 
-                training_examples['regression_scores'], 
-                training_examples['target_regression_scores'], 
-                training_examples['labels']
+        
+            training_batch = self.rpn.select_training_batch_subset(
+                training_batch, self.config.num_training_examples_per_image
             )
+        
+            loss += self.loss_fn.compute_from_batch(training_batch)
             
             self.metrics.update(
-                training_examples['objectness_scores'],
-                training_examples['iou_scores'], 
+                training_batch.class_scores, 
+                training_batch.iou_scores_with_targets
             )
             
         metrics = self.metrics.compute()
         
         for key in metrics.keys():  
             self.log(f'train/{key}', metrics[key], prog_bar=True, logger=True)
-            
+        
+        self.log('train/loss', loss, logger=True)
+        
         return loss
+    
     
     def validation_step(self, batch, batch_idx):
         
-        pixel_values, true_boxes, true_box_indices = batch
-        batch_size = pixel_values.shape[0]
- 
-        feature_maps = self.chexnet(pixel_values)
-        
-        out_dict = self.rpn.propose_boxes(feature_maps)
-        
-        for idx in range(batch_size):
+        for item in batch:
             
-            true_boxes_for_item = true_boxes[true_box_indices == idx]
+            pixel_values, true_boxes = item
             
-            proposed_boxes = out_dict['proposed_boxes'][idx]
-            objectness_scores = out_dict['objectness_scores'][idx]
+            feature_maps = self.chexnet(pixel_values)
             
-            nms_output = self.rpn.apply_nms_to_region_proposals(
-                proposed_boxes, 
-                objectness_scores,
-                iou_threshold=self.nms_iou_threshold
+            detection_output: DetectionOutput = self.rpn(feature_maps)
+            
+            _, iou_scores = self.rpn.match_proposed_boxes_to_true(
+                true_boxes, detection_output.proposed_boxes
             )
-            
-            proposed_boxes = nms_output['proposed_boxes']
-            objectness_scores = nms_output['objectness_scores']
             
             self.metrics.update(
-                objectness_scores,
-                proposed_boxes=proposed_boxes,
-                true_boxes=true_boxes_for_item
-            )
+                detection_output.class_scores, 
+                iou_scores
+            )        
         
         metrics = self.metrics.compute()
         
         for key in metrics.keys():  
             self.log(f'val/{key}', metrics[key], prog_bar=True, logger=True)
+    
+    
+    def test_step(self, batch, batch_idx):
+
+        for item in batch:
+            
+            pixel_values, true_boxes = item
+            
+            feature_maps = self.chexnet(pixel_values)
+            
+            detection_output: DetectionOutput = self.rpn(feature_maps)
+            
+            _, iou_scores = self.rpn.match_proposed_boxes_to_true(
+                true_boxes, detection_output.proposed_boxes
+            )
+            
+            self.metrics.update(
+                detection_output.class_scores, 
+                iou_scores
+            )        
+        
+        metrics = self.metrics.compute()
+        
+        for key in metrics.keys():  
+            self.log(f'test/{key}', metrics[key], prog_bar=True, logger=True)
+        
             
     def on_epoch_end(self) -> None:
         self.metrics.reset()
-            
-    #def test_step(self, batch, batch_idx):
-    #    
-    #    pixel_values, true_boxes, true_box_indices = batch
-    #    batch_size = pixel_values.shape[0]
- #
-    #    feature_maps = self.chexnet(pixel_values)
-    #    
-    #    out_dict = self.rpn.propose_boxes(feature_maps)
-    #    
-    #    preds = []
-    #    targets = []
-    #    
-    #    for idx in range(batch_size):
-    #        
-    #        true_boxes_for_item = true_boxes[true_box_indices == idx]
-    #        
-    #        proposed_boxes = out_dict['proposed_boxes'][idx]
-    #        objectness_scores = out_dict['objectness_scores'][idx]
-    #        
-    #        nms_output = self.rpn.apply_nms_to_region_proposals(
-    #            proposed_boxes, 
-    #            objectness_scores,
-    #            iou_threshold=self.nms_iou_threshold
-    #        )
-    #        
-    #        proposed_boxes = nms_output['proposed_boxes']
-    #        object_probs = nms_output['object_probs']
-    #        
-    #        preds.append({
-    #            'boxes': proposed_boxes, 
-    #            'scores': object_probs, 
-    #            'labels': torch.IntTensor([0]*len(proposed_boxes))
-    #        })
-    #        
-    #        targets.append({
-    #            'boxes': true_boxes_for_item, 
-    #            'labels': torch.IntTensor([0]*len(true_boxes_for_item))
-    #        })
-    #        
-    #    map = self.map(preds, targets)['map']
-    #    
-    #    self.log('mean_average_precision', map, prog_bar=True)
-    #    
-    #
-    #        
-    #        
+

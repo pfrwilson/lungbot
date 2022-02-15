@@ -5,6 +5,7 @@ from torch import Tensor, nn
 import torch
 from torch.nn import functional as F
 
+from ..components.object_detection import DetectionTrainingBatch
 
 def classification_loss(class_scores, labels):
     return F.cross_entropy(class_scores, labels.long())
@@ -52,4 +53,11 @@ class RCNNLoss(nn.Module):
         
         return cls_loss + self.lambda_ * loc_loss
     
-    
+    def compute_from_batch(self, batch: DetectionTrainingBatch):
+        
+        class_scores = batch.class_scores
+        regression_scores = batch.regression_scores
+        target_regression_scores = batch.target_regression_scores
+        labels = batch.class_labels
+        
+        return self(class_scores, regression_scores, target_regression_scores, labels)

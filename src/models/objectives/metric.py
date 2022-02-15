@@ -1,18 +1,11 @@
 
-from typing import overload
-import torchmetrics 
+
 from torchmetrics import Metric
 import torch
-from abc import ABC, abstractmethod
 from torch.nn import functional as F
 
 
-from .components.object_detection_utils import (
-    match_proposed_boxes_to_true,
-    label_by_iou_threshold,
-)
-
-class DetectionMetric(Metric, ABC):
+class DetectionMetric(Metric):
     
     def __init__(
         self, 
@@ -29,22 +22,14 @@ class DetectionMetric(Metric, ABC):
         self.add_state('false_positives', default=torch.tensor(0))
         self.add_state('false_negatives', default=torch.tensor(0))
     
-    
     def update(
         self, 
         objectness_scores,
-        iou_scores = None,
-        proposed_boxes = None, 
-        true_boxes = None
+        iou_scores, 
     ):
         
         object_probabilities = F.softmax(objectness_scores, dim=-1)[:, 1]
     
-        if iou_scores is None: 
-            iou_scores = match_proposed_boxes_to_true(
-                true_boxes, proposed_boxes,
-            )['iou_scores']
-        
         true_labels = \
             (iou_scores >= self.iou_threshold_for_detection).long()
         predicted_labels = \

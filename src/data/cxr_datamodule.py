@@ -3,25 +3,10 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
 from typing import List, Optional
 import torch
-from torchvision.transforms import Compose, Resize, ToTensor, Normalize
+from torchvision.transforms import Compose, Resize, ToTensor, Normalize, Lambda
+from einops import repeat
 
 from .cxr_dataset import CXRDataset
-
-def collate_items(items: List[torch.Tensor]):
-    
-    pixel_values = [ pixel_values for (pixel_values, _) in items]
-    pixel_values = torch.stack(pixel_values, dim=0)
-    
-    true_boxes = [ true_boxes for (_, true_boxes) in items]
-
-    true_box_indices = []
-    for i in range(len(true_boxes)):
-        true_box_indices.extend( [i] * len(true_boxes[i]) )
-    true_box_indices = torch.tensor( true_box_indices )
-    true_boxes = torch.concat(true_boxes, axis=0)
-    
-    return pixel_values, true_boxes, true_box_indices
-
 
 class CXRDataModule(LightningDataModule):
     
@@ -29,12 +14,13 @@ class CXRDataModule(LightningDataModule):
         
         self.root = root
         self.batch_size = batch_size
-        self.collate_fn = collate_items
+        self.collate_fn = lambda items: items   # return a list of pairs pixel_values, true_boxes
         self.transform = Compose([
             Resize(1024), 
             ToTensor(), 
             Normalize([0.485, 0.456, 0.406],
-                                            [0.229, 0.224, 0.225])
+                                            [0.229, 0.224, 0.225]), 
+            Lambda(lambda pixel_values : repeat(pixel_values, 'c h w -> 1 c h w'))
         ])
         
     def setup(self, stage: Optional[str] = None) -> None:
