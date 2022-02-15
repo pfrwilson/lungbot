@@ -7,12 +7,12 @@ from .data import CXRDataModule
 import torch
 
 from .data import CXRDataModule
-from .models import RPNModule
+from .models.rpn_module import RPNModule, RPNModuleConfig
 from .models.metric import DetectionMetric
 
 def train(config: DictConfig): 
     
-    rpn = RPNModule(**config.model.rpn)
+    rpn = RPNModule(RPNModuleConfig(**config.model.rpn))
     
     datamodule = CXRDataModule(
         **config.data
