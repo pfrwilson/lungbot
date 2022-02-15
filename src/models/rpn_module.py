@@ -1,57 +1,69 @@
 
-from omegaconf import DictConfig
+from omegaconf import DictConfig, ListConfig
 
 from pytorch_lightning import LightningModule
 from torchmetrics.detection.map import MeanAveragePrecision
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from pydantic import BaseModel
+from typing import Union, Sequence
+from dataclasses import dataclass
 
 from .components.chexnet import CheXNet
-from .components.region_proposal_network import RegionProposalNetwork
+from .components.region_proposal_network import RegionProposalNetwork, RPNConfig
 from .components.rcnn_loss import RCNNLoss
 
 from .metric import DetectionMetric
+
+
+@dataclass
+class RPNModuleConfig:
+    scales: Union[Sequence, ListConfig]
+    aspect_ratios: Union[Sequence, ListConfig]
+    freeze_chexnet: bool
+    lambda_: float
+    nms_iou_threshold: float
+    num_training_examples_per_image: int 
+    min_num_positive_examples: int
+    positivity_threshold: float 
+    negativity_threshold: float 
+    lr: float    
+
 
 class RPNModule(LightningModule):
     
     def __init__(
         self, 
-        scales = [.5, 1, 2],
-        aspect_ratios = [1, 1.5, .66], 
-        freeze_chexnet = True, 
-        lambda_ = 1.0, 
-        nms_iou_threshold = 0.5, 
-        num_training_examples_per_image = 16, 
-        min_num_positive_examples = 4,
-        positivity_threshold = 0.7, 
-        negativity_threshold = 0.3,
-        lr = 1e-3,
+        config: RPNModuleConfig
     ):
 
         super().__init__()
 
         self.rpn = RegionProposalNetwork(
-            image_input_size=1024, 
-            feature_map_size=32, 
-            feature_dim=1024, 
-            hidden_dim=256, 
-            scales=scales, 
-            aspect_ratios=aspect_ratios
+            RPNConfig(
+                image_input_size=1024, 
+                feature_map_size=32, 
+                feature_dim=1024, 
+                hidden_dim=256, 
+                scales=config.scales, 
+                aspect_ratios=config.aspect_ratios, 
+                nms_threshold=config.nms_iou_threshold
+            )
         )
         
         self.chexnet = CheXNet()
-        if freeze_chexnet:
+        if config.freeze_chexnet:
             for parameter in list(self.chexnet.parameters()):
                 parameter.requires_grad = False     
         
-        self.loss_fn = RCNNLoss(lambda_=lambda_)
+        self.loss_fn = RCNNLoss(lambda_=config.lambda_)
     
-        self.nms_iou_threshold = torch.tensor(nms_iou_threshold).double()
-        self.num_training_examples_per_images=num_training_examples_per_image
-        self.min_num_positive_examples=min_num_positive_examples
-        self.positivity_threshold=positivity_threshold
-        self.negativity_threshold=negativity_threshold
-        self.lr = lr
+        self.nms_iou_threshold = torch.tensor(config.nms_iou_threshold).double()
+        self.num_training_examples_per_images=config.num_training_examples_per_image
+        self.min_num_positive_examples=config.min_num_positive_examples
+        self.positivity_threshold=config.positivity_threshold
+        self.negativity_threshold=config.negativity_threshold
+        self.lr = config.lr
 
         self.metrics = DetectionMetric()
 

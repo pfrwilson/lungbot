@@ -1,3 +1,4 @@
+from matplotlib.pyplot import cla
 import torch 
 import einops
 from einops.layers.torch import Rearrange
@@ -5,7 +6,9 @@ from torch import nn
 from torchvision import ops 
 from torch.nn import functional as F
 
-from typing import List
+from dataclasses import dataclass
+from typing import Sequence, Union
+from omegaconf import ListConfig
 from itertools import product
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -16,45 +19,51 @@ from .object_detection_utils import (
     select_training_examples
 )
 
+
+@dataclass
+class RPNConfig:
+    image_input_size: int
+    feature_map_size: int 
+    feature_dim: int 
+    hidden_dim: int 
+    scales: Union[list, ListConfig]
+    aspect_ratios: Union[list, ListConfig]
+    nms_threshold: float
+
+
 class RegionProposalNetwork(nn.Module):
 
     def __init__(
         self, 
-        image_input_size: int = 1024,
-        feature_map_size: int = 32, 
-        feature_dim: int = 1024,
-        hidden_dim: int = 256,
-        scales: List[float] = None,
-        aspect_ratios: List[float] = None, 
-        nms_threshold: float = 0.7
+        config: RPNConfig
     ):  
         super().__init__()
-        
-        self.image_input_size = image_input_size
-        self.feature_map_size = feature_map_size
-        self.feature_dim = feature_dim
-        self.scales = scales
-        self.aspect_ratios = aspect_ratios
+   
+        self.image_input_size = config.image_input_size
+        self.feature_map_size = config.feature_map_size
+        self.feature_dim = config.feature_dim
+        self.scales = config.scales
+        self.aspect_ratios = config.aspect_ratios
     
         self.anchor_boxes = self.create_anchor_boxes(
-            image_input_size, 
-            feature_map_size, 
-            scales, 
-            aspect_ratios
+            config.image_input_size, 
+            config.feature_map_size, 
+            config.scales, 
+            config.aspect_ratios
         )
         
         self.sliding_window = nn.Conv2d(
-            in_channels=feature_dim, 
-            out_channels=hidden_dim, 
+            in_channels=config.feature_dim, 
+            out_channels=config.hidden_dim, 
             kernel_size=3, 
             padding=1
         )
     
-        k = len(scales) * len(aspect_ratios)
+        k = len(config.scales) * len(config.aspect_ratios)
 
         self.bbox_regressor = nn.Sequential(
             nn.Conv2d(
-                in_channels=hidden_dim, 
+                in_channels=config.hidden_dim, 
                 out_channels=k * 4, 
                 kernel_size=1
             ), 
@@ -67,7 +76,7 @@ class RegionProposalNetwork(nn.Module):
         
         self.classifier = nn.Sequential(
             nn.Conv2d(
-                in_channels=hidden_dim, 
+                in_channels=config.hidden_dim, 
                 out_channels=k * 2, 
                 kernel_size=1
             ), 
@@ -143,8 +152,6 @@ class RegionProposalNetwork(nn.Module):
             b=b, h=h, w=w, k=k, four=4
         )
         
-        #proposed_boxes = proposed_boxes.double()
-        
         return {
             'proposed_boxes': proposed_boxes, 
             'regression_scores': regression_scores,
@@ -210,7 +217,7 @@ class RegionProposalNetwork(nn.Module):
     
     @staticmethod
     def create_anchor_boxes(input_size: int, feature_map_size: int,
-                            scales: List[float], aspect_ratios: List[float]):
+                            scales: Sequence[float], aspect_ratios: Sequence[float]):
         
         d = input_size / feature_map_size
 
@@ -309,12 +316,6 @@ class RegionProposalNetwork(nn.Module):
         )
 
         anchor_boxes = ops.box_convert( anchor_boxes, 'xyxy', 'xywh')
-
-        #anchor_boxes = einops.rearrange(
-        #    anchor_boxes,
-        #    '( n1 n2 k ) four -> n1 n2 k four', 
-        #    n1=n1, n2=n2, k=k, four=four
-        #)
         
         return anchor_boxes.to(DEVICE)
         
