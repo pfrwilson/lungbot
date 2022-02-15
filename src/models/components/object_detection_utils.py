@@ -135,6 +135,7 @@ def inverse_boxreg_transform(proposed_boxes, anchor_boxes, in_fmt='xywh'):
     return transform_parameters
     
     
+    
 def select_training_examples(
     proposed_boxes: torch.Tensor, 
     anchor_boxes: torch.Tensor, 
@@ -196,34 +197,4 @@ def select_training_examples(
     }
     
     
-def compute_metrics(
-        proposed_boxes, 
-        object_probs, 
-        true_boxes,
-        prob_threshold_for_detection = 0.01,
-        iou_threshold_for_detection = 0.5
-    ):
-    
-    proposed_boxes = proposed_boxes[object_probs > prob_threshold_for_detection]
-    
-    if len(proposed_boxes) == 0:
-        return 0, 0
-    
-    iou_scores = match_proposed_boxes_to_true(
-        proposed_boxes, true_boxes
-    )['iou_scores']
-    
-    labels = label_by_iou_threshold(
-        iou_scores, 
-        positivity_threshold=iou_threshold_for_detection,
-        negativity_threshold=iou_threshold_for_detection
-    )
-    
-    assert torch.all(labels != -1)
-    
-    tp = len(labels[labels == 1])
-    fp = len(labels[labels == 0])
-    
-    return tp, fp, tp+fp
-
 
