@@ -5,7 +5,6 @@ from pytorch_lightning import LightningModule
 from torchmetrics.detection.map import MeanAveragePrecision
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-from pydantic import BaseModel
 from typing import Union, Sequence
 from dataclasses import dataclass
 
