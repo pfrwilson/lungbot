@@ -2,7 +2,7 @@ from matplotlib.pyplot import cla
 import torch 
 import einops
 from einops.layers.torch import Rearrange
-from torch import nn 
+from torch import det, nn 
 from torchvision import ops 
 from torch.nn import functional as F
 
@@ -13,11 +13,7 @@ from itertools import product
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-from .object_detection_utils import (
-    boxreg_transform, 
-    inverse_boxreg_transform, 
-    select_training_examples
-)
+from .object_detection import DetectionOutput, DetectionTrainingBatch, DetectionMixin
 
 
 @dataclass
@@ -31,19 +27,13 @@ class RPNConfig:
     nms_threshold: float
 
 
-class RegionProposalNetwork(nn.Module):
+class RegionProposalNetwork(nn.Module, DetectionMixin):
 
-    def __init__(
-        self, 
-        config: RPNConfig
-    ):  
+    def __init__(self, config: RPNConfig):  
+        
         super().__init__()
    
-        self.image_input_size = config.image_input_size
-        self.feature_map_size = config.feature_map_size
-        self.feature_dim = config.feature_dim
-        self.scales = config.scales
-        self.aspect_ratios = config.aspect_ratios
+        self.config = config
     
         self.anchor_boxes = self.create_anchor_boxes(
             config.image_input_size, 
@@ -87,111 +77,45 @@ class RegionProposalNetwork(nn.Module):
             )
         )
     
-        self.boxreg_transform = boxreg_transform
-        self.inverse_boxreg_transfrom = inverse_boxreg_transform
-        self.select_training_examples = select_training_examples
+    def forward(self, in_feature_map, training=False):
         
+        detection_output = self.propose_boxes(in_feature_map)
+
+        if not self.training: 
+            detection_output = self.apply_nms(
+                detection_output,
+                self.config.nms_threshold,
+            )
+            
+        return detection_output
         
     def propose_boxes(self, in_feature_map):
         
-        b, feature_dim, H, W = in_feature_map.shape
+        assert in_feature_map.shape[0] == 1, 'Call on single slice of feature map at a time.'
+        _, feature_dim, H, W = in_feature_map.shape
         
         sliding_window_output = self.sliding_window(in_feature_map)
         
         regression_scores = self.bbox_regressor(sliding_window_output)
-        objectness_scores = self.classifier(sliding_window_output)
-        
-        # expand anchor boxes into batch dimension
-        anchor_boxes = einops.repeat(
-            self.anchor_boxes,
-            ' n_boxes four -> b n_boxes four ', 
-            b=b
-        )
-        
-        # have to fold the outer dimensions together to apply the transform:
-        b, h, w, k, four = regression_scores.shape
-        
         regression_scores = einops.rearrange(
             regression_scores, 
             'b h w k four -> ( b h w k ) four'
         )
         
-        anchor_boxes = einops.rearrange(
-            anchor_boxes,  
-            'b n_boxes four -> ( b n_boxes ) four'
-        )
-        
+        objectness_scores = self.classifier(sliding_window_output)
         objectness_scores = einops.rearrange(
             objectness_scores,  
             'b h w k two -> ( b h w k ) two'
         )
         
-        proposed_boxes = boxreg_transform(regression_scores, anchor_boxes)
+        proposed_boxes = self.boxreg_transform(regression_scores, self.anchor_boxes)
         
-        proposed_boxes = einops.rearrange(
-            proposed_boxes, 
-            '( b h w k ) four -> b ( h w k ) four', 
-            b=b, h=h, w=w, k=k, four=4
-        )
-        
-        regression_scores = einops.rearrange(
-            regression_scores, 
-            '( b h w k ) four -> b ( h w k ) four', 
-            b=b, h=h, w=w, k=k, four=4
-        )
-        
-        objectness_scores = einops.rearrange(
-            objectness_scores, 
-            ' ( b h w k ) two -> b ( h w k ) two', 
-            b=b, h=h, w=w, k=k, two=2
-        )
-        
-        anchor_boxes = einops.rearrange(
-            anchor_boxes, 
-            ' ( b h w k ) four -> b ( h w k ) four', 
-            b=b, h=h, w=w, k=k, four=4
-        )
-        
-        return {
-            'proposed_boxes': proposed_boxes, 
-            'regression_scores': regression_scores,
-            'objectness_scores': objectness_scores, 
-            'anchor_boxes': anchor_boxes
-        } 
-        
-        
-    @staticmethod
-    def apply_nms_to_region_proposals(
-        proposed_boxes: torch.Tensor, 
-        objectness_scores: torch.Tensor,
-        iou_threshold: float,
-    ):
-        """applies nms to remove overlapping boxes with a lower objectness score
-
-        Args:
-            proposes_boxes (torch.Tensor): (N, 4) tensor of boxes in format xywh
-            objectness_scores (torch.Tensor): (N, 2) tensor of objectness scores
-            iou_threshold: The iou threshold for proposed boxes to be considered overlapping. 
-            
-        Returns: 
-            a dict containing the proposed boxes, the objectness scores, and the object probability
-            after nms. 
-        """
-        
-        object_prob = F.softmax(objectness_scores, dim=-1)[:, 1]
-        
-        indices_to_keep = ops.nms(
-            ops.box_convert(proposed_boxes, in_fmt='xywh', out_fmt='xyxy'),
-            object_prob,
-            iou_threshold=iou_threshold
-        )
-        
-        return {
-            'proposed_boxes': proposed_boxes[indices_to_keep],
-            'objectness_scores': objectness_scores[indices_to_keep],
-            'object_probs': object_prob[indices_to_keep]
-        }
-        
+        return DetectionOutput(
+            proposed_boxes=proposed_boxes, 
+            regression_scores=regression_scores, 
+            class_scores=objectness_scores, 
+            anchor_boxes=self.anchor_boxes
+        )    
 
     @staticmethod
     def apply_objectness_threshold(proposed_boxes, object_prob, threshold):
@@ -213,7 +137,7 @@ class RegionProposalNetwork(nn.Module):
             'proposed_boxes': proposed_boxes[idx],
             'object_prob': object_prob[idx]
         }
-        
+    
     
     @staticmethod
     def create_anchor_boxes(input_size: int, feature_map_size: int,
