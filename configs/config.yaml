@@ -10,3 +10,5 @@ defaults:
   - optimizer: default
 
 print_config: yes
+disable_warnings: yes
+
