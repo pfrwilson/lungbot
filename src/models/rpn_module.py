@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from .components.chexnet import CheXNet
 from .components.region_proposal_network import RegionProposalNetwork, RPNConfig
-from .components.rcnn_loss import RCNNLoss
+from .objectives.rcnn_loss import RCNNLoss
 
 from .metric import DetectionMetric
 
