@@ -10,7 +10,12 @@ import wandb
 
 
 def train(config: DictConfig): 
-     
+    
+    wandb.init(
+        project='lungbot',
+        config=OmegaConf.to_object(config)
+    )
+    
     rpn = RPNModule(
         RPNModuleConfig(**config.model.rpn)
     )
