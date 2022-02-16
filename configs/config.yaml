@@ -7,6 +7,9 @@ defaults:
   - machine: server
   - mode: train_rpn
   - optimizer: default
+  - callbacks: default
+  - seed: default
+  - logger: wandb
 
 print_config: yes
 disable_warnings: yes

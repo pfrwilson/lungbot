@@ -1,0 +1,11 @@
+
+early_stopping: 
+  use: yes
+  monitor: val/precision
+  patience: 10
+  mode: 'max'
+
+model_checkpoint: 
+  monitor: val/precision
+  save_top_k: 3
+  mode: 'max'

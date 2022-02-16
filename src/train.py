@@ -1,7 +1,9 @@
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
+import pytorch_lightning
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning import seed_everything
 
 from .data import CXRDataModule
 from .models.rpn_module import RPNModule, RPNModuleConfig
@@ -25,13 +27,12 @@ def train(config: DictConfig):
     )
     
     logger = WandbLogger(
-        project='lungbot', 
-        log_model='all'
+        **config.logger
     )
     
     callbacks = [
-        EarlyStopping(monitor='val/precision', patience=10, mode='max'),
-        ModelCheckpoint(monitor='val/precision', save_top_k=3, mode='max')
+        EarlyStopping(**config.callbacks.early_stopping),
+        ModelCheckpoint(**config.callbacks.model_checkpoint)
     ]
     
     trainer = Trainer(
@@ -39,6 +40,9 @@ def train(config: DictConfig):
         logger=logger, 
         callbacks=callbacks
     )
+    
+    if config.seed.get("pytorch_lightning_seed"):
+        seed_everything(config.seed.pytorch_lightning_seed)
     
     trainer.fit(rpn, datamodule)
     

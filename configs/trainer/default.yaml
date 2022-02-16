@@ -1,6 +1,6 @@
 
 max_epochs: null
-min_epochs: 100
+min_epochs: 50
 accumulate_grad_batches: 32
 default_root_dir: ~/lightning_logs
 accelerator: gpu
