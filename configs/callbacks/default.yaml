@@ -1,6 +1,5 @@
 
 early_stopping: 
-  use: yes
   monitor: val/precision
   patience: 10
   mode: 'max'
