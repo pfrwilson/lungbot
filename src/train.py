@@ -17,7 +17,7 @@ def train(config: DictConfig):
     )
     
     rpn = RPNModule(
-        config.model.rpn
+        config.model.rpn_module_config
     )
     
     datamodule = CXRDataModule(
