@@ -14,19 +14,20 @@ from .components.region_proposal_network import RegionProposalNetwork, RPNConfig
 from .objectives.rcnn_loss import RCNNLoss
 from .objectives.metric import DetectionMetric
 
+from ..configs.schema import RPNModuleConfig
 
-@dataclass
-class RPNModuleConfig:
-    scales: Union[Sequence, ListConfig]
-    aspect_ratios: Union[Sequence, ListConfig]
-    freeze_chexnet: bool
-    lambda_: float
-    nms_iou_threshold: float
-    num_training_examples_per_image: int 
-    min_num_positive_examples: int
-    positivity_threshold: float 
-    negativity_threshold: float 
-    lr: float    
+#@dataclass
+#class RPNModuleConfig:
+#    scales: Union[Sequence, ListConfig]
+#    aspect_ratios: Union[Sequence, ListConfig]
+#    freeze_chexnet: bool
+#    lambda_: float
+#    nms_iou_threshold: float
+#    num_training_examples_per_image: int 
+#    min_num_positive_examples: int
+#    positivity_threshold: float 
+#    negativity_threshold: float 
+#    lr: float    
 
 
 class RPNModule(LightningModule):
@@ -34,8 +35,10 @@ class RPNModule(LightningModule):
     def __init__(self, config: RPNModuleConfig):
 
         super().__init__()
-
-        self.config = config
+        
+        self.save_hyperparameters(config)
+        
+        self.config = RPNModuleConfig(**config)
 
         self.rpn = RegionProposalNetwork(
             RPNConfig(
