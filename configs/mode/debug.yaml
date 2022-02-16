@@ -1,4 +1,5 @@
+# @package _global_
 
 trainer:
   max_epochs: 1
-  
+  min_epochs: null
