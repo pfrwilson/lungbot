@@ -7,7 +7,6 @@ defaults:
   - machine: server
   - mode: train_rpn
   - optimizer: default
-  - logger: wandb
 
 print_config: yes
 disable_warnings: yes

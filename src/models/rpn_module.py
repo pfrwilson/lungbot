@@ -14,19 +14,20 @@ from .components.region_proposal_network import RegionProposalNetwork, RPNConfig
 from .objectives.rcnn_loss import RCNNLoss
 from .objectives.metric import DetectionMetric
 
+from ..configs.schema import RPNModuleConfig
 
-@dataclass
-class RPNModuleConfig:
-    scales: Union[Sequence, ListConfig]
-    aspect_ratios: Union[Sequence, ListConfig]
-    freeze_chexnet: bool
-    lambda_: float
-    nms_iou_threshold: float
-    num_training_examples_per_image: int 
-    min_num_positive_examples: int
-    positivity_threshold: float 
-    negativity_threshold: float 
-    lr: float    
+#@dataclass
+#class RPNModuleConfig:
+#    scales: Union[Sequence, ListConfig]
+#    aspect_ratios: Union[Sequence, ListConfig]
+#    freeze_chexnet: bool
+#    lambda_: float
+#    nms_iou_threshold: float
+#    num_training_examples_per_image: int 
+#    min_num_positive_examples: int
+#    positivity_threshold: float 
+#    negativity_threshold: float 
+#    lr: float    
 
 
 class RPNModule(LightningModule):
@@ -34,19 +35,10 @@ class RPNModule(LightningModule):
     def __init__(self, config: RPNModuleConfig):
 
         super().__init__()
-
+        
         self.config = config
-
         self.rpn = RegionProposalNetwork(
-            RPNConfig(
-                image_input_size=1024, 
-                feature_map_size=32, 
-                feature_dim=1024, 
-                hidden_dim=256, 
-                scales=config.scales, 
-                aspect_ratios=config.aspect_ratios, 
-                nms_threshold=config.nms_iou_threshold
-            )
+            config.rpn_config
         )
         
         self.chexnet = CheXNet()
@@ -55,19 +47,14 @@ class RPNModule(LightningModule):
                 parameter.requires_grad = False     
         
         self.loss_fn = RCNNLoss(lambda_=config.lambda_)
-    
-        self.num_training_examples_per_images=config.num_training_examples_per_image
-        self.min_num_positive_examples=config.min_num_positive_examples
-        self.positivity_threshold=config.positivity_threshold
-        self.negativity_threshold=config.negativity_threshold
-        self.lr = config.lr
 
         self.metrics = DetectionMetric()
 
+        self.save_hyperparameters()
 
     def configure_optimizers(self):
         
-        optim = torch.optim.Adam(self.parameters(), self.lr)
+        optim = torch.optim.Adam(self.parameters(), self.config.lr)
         
         scheduler = CosineAnnealingWarmRestarts(
             optim, 
@@ -97,7 +84,7 @@ class RPNModule(LightningModule):
             training_batch = self.rpn.get_training_batch(
                 detection_output, 
                 true_boxes, 
-                min_num_positives=self.config.min_num_positive_examples, 
+                min_num_positives=self.config.min_num_positive_examples,
                 positivity_threshold=self.config.positivity_threshold, 
                 negativity_threshold=self.config.negativity_threshold
             )

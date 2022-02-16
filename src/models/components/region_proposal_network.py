@@ -14,18 +14,19 @@ from itertools import product
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 from .object_detection import DetectionOutput, DetectionTrainingBatch, DetectionMixin
+from ...configs.schema import RPNConfig
 
 
-@dataclass
-class RPNConfig:
-    image_input_size: int
-    feature_map_size: int 
-    feature_dim: int 
-    hidden_dim: int 
-    scales: Union[list, ListConfig]
-    aspect_ratios: Union[list, ListConfig]
-    nms_threshold: float
-
+#@dataclass
+#class RPNConfig:
+#    image_input_size: int
+#    feature_map_size: int 
+#    feature_dim: int 
+#    hidden_dim: int 
+#    scales: Union[list, ListConfig]
+#    aspect_ratios: Union[list, ListConfig]
+#    nms_threshold: float
+#
 
 class RegionProposalNetwork(nn.Module, DetectionMixin):
 
@@ -116,28 +117,6 @@ class RegionProposalNetwork(nn.Module, DetectionMixin):
             class_scores=objectness_scores, 
             anchor_boxes=self.anchor_boxes
         )    
-
-    @staticmethod
-    def apply_objectness_threshold(proposed_boxes, object_prob, threshold):
-        """Applies an threshold of objectness probability to reject
-           proposed boxes with insufficient likelihodd of containing an 
-           object
-
-        Args:
-            proposed_boxes ([type]): [description]
-            object_prob ([type]): [description]
-            threshold ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """
-        idx = object_prob >= threshold
-        
-        return {
-            'proposed_boxes': proposed_boxes[idx],
-            'object_prob': object_prob[idx]
-        }
-    
     
     @staticmethod
     def create_anchor_boxes(input_size: int, feature_map_size: int,

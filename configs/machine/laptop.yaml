@@ -9,5 +9,5 @@ trainer:
   gpus: 0
 
 model:
-  rpn: 
+  rpn_module_config:
     freeze_chexnet: yes
