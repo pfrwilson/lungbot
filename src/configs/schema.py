@@ -3,36 +3,36 @@ from dataclasses import dataclass
 from hydra.core.config_store import ConfigStore
 from omegaconf import ListConfig
 
-from typing import Union, Sequence
+from typing import Union, Sequence, List
 
 cs = ConfigStore.instance()
 
 
 @dataclass
 class RPNConfig:
-    image_input_size: int
-    feature_map_size: int 
-    feature_dim: int 
-    hidden_dim: int 
-    scales: Union[list, ListConfig]
-    aspect_ratios: Union[list, ListConfig]
-    nms_threshold: float
+    scales: List 
+    aspect_ratios: List
+    
+    nms_threshold: float = 0.7
+    
+    image_input_size: int = 1024
+    feature_map_size: int = 32
+    feature_dim: int = 1024
+    hidden_dim: int = 256
+    
 
 
 @dataclass
 class RPNModuleConfig:
     
+    rpn_config: RPNConfig
     
-    scales: list
-    aspect_ratios: list
     freeze_chexnet: bool
     lambda_: float
-    nms_iou_threshold: float
     num_training_examples_per_image: int 
     min_num_positive_examples: int
     positivity_threshold: float 
     negativity_threshold: float 
     lr: float    
 
-cs.store(name='rpn', node=RPNModuleConfig, group='model')
-
+cs.store(name='rpn_module_config', node=RPNModuleConfig, group='model')
