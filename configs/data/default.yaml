@@ -1,5 +1,3 @@
 batch_size: 1
 
-preprocessing_config: 
-  equalize_hist: True
-  
+preprocessing_equalize_hist: True
