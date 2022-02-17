@@ -5,4 +5,3 @@ accumulate_grad_batches: 32
 default_root_dir: ~/lightning_logs
 accelerator: gpu
 gpus: 1
-log_every_n_steps: null
