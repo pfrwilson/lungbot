@@ -12,3 +12,5 @@ images
 lightning_logs/
 outputs
 __pycache__
+wandb/
+artifacts/
