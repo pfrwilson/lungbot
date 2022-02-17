@@ -120,7 +120,7 @@ class RPNModule(LightningModule):
             self.val_precision(preds, targets)
             self.val_recall(preds, targets)
         
-        self.log('val/precition', self.val_precision, on_epoch=True)
+        self.log('val/precision', self.val_precision, on_epoch=True)
         self.log('val/recall', self.val_recall, on_epoch=True)
     
     def test_step(self, batch, batch_idx):
