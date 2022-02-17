@@ -1,3 +1,4 @@
+from data.preprocessing import preprocessor_factory
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 import pytorch_lightning
@@ -25,6 +26,7 @@ def train(config: DictConfig):
     
     datamodule = CXRDataModule(
         **config.data,
+        preprocessor_factory(config.preprocessing_config)
     )
     
     logger = WandbLogger(
