@@ -11,7 +11,7 @@ rpn_module_config:
     feature_dim: 1024
     hidden_dim: 256
 
-  freeze_chexnet: no
+  freeze_chexnet: yes
   lambda_: 10
   num_training_examples_per_image: 32
   min_num_positive_examples: 4
