@@ -7,21 +7,23 @@ from torchvision.transforms import Compose, Resize, ToTensor, Normalize, Lambda
 from einops import repeat
 
 from .cxr_dataset import CXRDataset
+from .preprocessing import preprocessor_factory
+
 
 class CXRDataModule(LightningDataModule):
     
-    def __init__(self, root: str, batch_size: int, preprocessing = None):
+    def __init__(self, root: str, batch_size: int, preprocessing_config = None):
         
         self.root = root
         self.batch_size = batch_size
         self.collate_fn = lambda items: items   # return a list of pairs pixel_values, true_boxes
-        self.preprocessing = preprocessing if preprocessing is not None else Lambda(lambda im: im)
+        self.preprocessing = preprocessor_factory(preprocessing_config)
         self.transform = Compose([
             self.preprocessing, 
             Resize(1024), 
             ToTensor(), 
             Normalize([0.485, 0.456, 0.406],
-                                            [0.229, 0.224, 0.225]), 
+                      [0.229, 0.224, 0.225]), 
             Lambda(lambda pixel_values : repeat(pixel_values, 'c h w -> 1 c h w'))
         ])
         
