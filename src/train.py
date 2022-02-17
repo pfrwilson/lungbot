@@ -26,7 +26,6 @@ def train(config: DictConfig):
     
     datamodule = CXRDataModule(
         **config.data,
-        preprocessor_factory(config.preprocessing_config)
     )
     
     logger = WandbLogger(
