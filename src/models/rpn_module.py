@@ -140,11 +140,11 @@ class RPNModule(LightningModule):
             preds = F.softmax(detection_output.class_scores, dim=-1)[:, 1]
             targets = (iou_scores >= self.config.metrics_match_threshold).long()
         
-            self.val_precision(preds, targets)
-            self.val_recall(preds, targets)
+            self.test_precision(preds, targets)
+            self.test_recall(preds, targets)
         
-        self.log('val/precition', self.val_precision, on_epoch=True)
-        self.log('val/recall', self.val_recall, on_epoch=True)
+        self.log('test/precition', self.test_precision, on_epoch=True)
+        self.log('test/recall', self.test_recall, on_epoch=True)
         
             
 
