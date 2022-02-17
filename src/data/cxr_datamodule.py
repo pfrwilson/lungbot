@@ -36,6 +36,7 @@ class CXRDataModule(LightningDataModule):
                                   transform=self.transform)
 
     def train_dataloader(self):
+        #print(self.transform)
         return DataLoader(
             self.train_ds, 
             batch_size = self.batch_size, 

@@ -4,7 +4,7 @@ from omegaconf import DictConfig, OmegaConf
 @hydra.main(config_path='configs', config_name='config')
 def main(config: DictConfig):
 
-    print('config is', config)
+    #print('config is', config)
     
     from src.train import train
     from src import utils
