@@ -1,1 +1,11 @@
-Using deep learning to detect lung nodules from chest x-ray
+# LungBot: Lung Nodule Detector
+
+> Detecting lung nodules from chest X ray using AI
+
+## Introduction
+
+## Quick Start
+
+
+## Training, evaluation, performance
+

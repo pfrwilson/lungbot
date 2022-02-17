@@ -9,3 +9,9 @@ settings.json
 n0001.mha
 c0002.mha
 images
+.coverage
+lightning_logs/
+outputs
+__pycache__
+wandb/
+artifacts/

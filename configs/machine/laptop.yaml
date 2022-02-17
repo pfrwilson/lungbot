@@ -1,0 +1,13 @@
+
+# @package _global_ 
+
+data: 
+  root: /Users/paulwilson/data/node_21/cxr_images/proccessed_data
+
+trainer:
+  accelerator: cpu
+  gpus: 0
+
+model:
+  rpn_module_config:
+    freeze_chexnet: yes

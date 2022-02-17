@@ -1,0 +1,8 @@
+
+max_epochs: 100
+min_epochs: 10 
+accumulate_grad_batches: null
+overfit_batches: 10
+accelerator: gpu
+gpus: 1
+log_every_n_steps: 1

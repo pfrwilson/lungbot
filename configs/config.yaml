@@ -1,0 +1,17 @@
+
+defaults:
+  - _self_
+  - data: default
+  - trainer: default
+  - model: default
+  - machine: server
+  - mode: train_rpn
+  - optimizer: default
+  - callbacks: default
+  - seed: default
+  - logger: wandb
+
+print_config: yes
+disable_warnings: yes
+
+run_name: null

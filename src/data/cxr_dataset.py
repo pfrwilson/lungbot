@@ -1,31 +1,36 @@
-from curses import meta
+import einops
 import torch
 from torch.utils.data import Dataset
 import SimpleITK as sitk
 import pandas as pd
 import os
-from sklearn.model_selection import train_test_split
-import random
 import numpy as np
-from skimage.color import rgb2hsv
+from skimage.color import rgb2hsv, gray2rgb
+from PIL import Image
 
 SEEDS = {
     'test': 1, 
     'val': 2
 }
 
-
 class CXRDataset(Dataset):
     
-    def __init__(self, root, split='train', resample_val=False,
-                 ignore_negatives=True, transform=None, target_transform=None, 
-                 convert_to_float=True):
+    def __init__(
+            self, 
+            root, 
+            split='train', 
+            resample_val=False,
+            ignore_negatives=True, 
+            transform=None,
+            target_to_tensor=True,
+        ):
+        
+        super().__init__()
         
         self.root = root
         self.split = split
         self.transform = transform
-        self.target_transform = target_transform
-        self.convert_to_float = convert_to_float
+        self.target_to_tensor = target_to_tensor
         
         self.metadata = pd.read_csv(
             os.path.join(root, 'metadata.csv'),
@@ -52,13 +57,16 @@ class CXRDataset(Dataset):
         
         self.idx_df = idx_df.reset_index(drop=True)
         
-        
     def __len__(self):
-        return len(self.idx2filepath)
+        return len(self.idx_df)
     
     def __getitem__(self, idx):
         
-        img_name = self.idx_df.loc[idx, 'img_name']
+        try:
+            img_name = self.idx_df.loc[idx, 'img_name']
+        except KeyError:
+            raise IndexError    
+            
         item_metadata = self.metadata.loc[self.metadata.img_name == img_name]
         
         pixel_values = self.__read_mdh_to_numpy(
@@ -68,26 +76,28 @@ class CXRDataset(Dataset):
                 img_name)
         )
         
-        label = item_metadata.loc[item_metadata.index[0], 'label']
-        
         bounding_boxes = []
-        if label == 1:
-            for row in item_metadata.iloc:
-                d = dict(row)
-                d.pop('label')
-                d.pop('img_name')
-                bounding_boxes.append(d)
+        for row in item_metadata.iloc:
+            d = dict(row)
+            d.pop('img_name')
+            bounding_boxes.append(d)
         
-        if self.convert_to_float:
-            max_ = np.max(pixel_values)
-            min_ = np.min(pixel_values)
-            pixel_values = (pixel_values - min_)/(max_ - min_)
+        max_ = np.max(pixel_values)
+        min_ = np.min(pixel_values)
+        pixel_values = (pixel_values - min_)/(max_ - min_)
         
-        if self.transform:
+        
+        bounding_boxes = pd.DataFrame(bounding_boxes)
+        pixel_values = gray2rgb(pixel_values)
+        pixel_values = Image.fromarray(np.uint8(pixel_values*255))
+        
+        if self.transform: 
             pixel_values = self.transform(pixel_values)
-        if self.target_transform:
-            bounding_boxes = self.target_transform(bounding_boxes)
-    
+        
+        if self.target_to_tensor:
+            values = bounding_boxes[['x', 'y', 'width', 'height']].values
+            bounding_boxes = torch.tensor(values)
+        
         return pixel_values, bounding_boxes      
     
     @staticmethod
@@ -97,15 +107,6 @@ class CXRDataset(Dataset):
         array = sitk.GetArrayFromImage(img)
         
         return array
-
-    @staticmethod
-    def __convert_numpy_to_hsv(grayscale_array: np.ndarray):
-
-        stacked = np.stack((grayscale_array,)*3,-1).astype(int)
-        rgb = (stacked - grayscale_array.min())/ (grayscale_array.max()-grayscale_array.min())
-        hsv = rgb2hsv(rgb)
-
-        return hsv
     
     @staticmethod
     def __get_idx_df(root, resample_val):
@@ -137,5 +138,4 @@ class CXRDataset(Dataset):
         )
         
         return idx_df
-        
-        
+    

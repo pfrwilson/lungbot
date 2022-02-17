@@ -1,0 +1,21 @@
+
+rpn_module_config:
+
+  rpn_config: 
+    
+    scales: [.5, 1, 2, .25, 1.5]
+    aspect_ratios: [1]
+    nms_threshold: 0.7
+    image_input_size: 1024
+    feature_map_size: 32
+    feature_dim: 1024
+    hidden_dim: 256
+
+  freeze_chexnet: no
+  lambda_: 10
+  num_training_examples_per_image: 32
+  min_num_positive_examples: 4
+  positivity_threshold: 0.4
+  negativity_threshold: 0.05
+  lr: 1e-4
+  metrics_match_threshold: 0.5
