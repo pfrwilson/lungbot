@@ -94,8 +94,8 @@ class RPNModule(LightningModule):
             self.train_recall(preds, labels)
         
         self.log('train/loss', loss)
-        self.log('train/precision', self.train_precision)
-        self.log('train/recall', self.train_recall)
+        self.log('train/precision', self.train_precision, on_step=False)
+        self.log('train/recall', self.train_recall, on_step=False)
         
         return loss
     
