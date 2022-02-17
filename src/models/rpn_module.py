@@ -87,7 +87,7 @@ class RPNModule(LightningModule):
         
             loss += self.loss_fn.compute_from_batch(training_batch)
             
-            preds = F.softmax(training_batch.class_scores, dim=-1)[1]
+            preds = F.softmax(training_batch.class_scores, dim=-1)[:, 1]
             labels = training_batch.class_labels
             
             self.train_precision(preds, labels)
@@ -114,7 +114,7 @@ class RPNModule(LightningModule):
                 true_boxes, detection_output.proposed_boxes
             )
             
-            preds = F.softmax(detection_output.class_scores, dim=-1)[1]
+            preds = F.softmax(detection_output.class_scores, dim=-1)[:, 1]
             targets = (iou_scores >= self.config.metrics_match_threshold).long()
         
             self.val_precision(preds, targets)
@@ -137,7 +137,7 @@ class RPNModule(LightningModule):
                 true_boxes, detection_output.proposed_boxes
             )
             
-            preds = F.softmax(detection_output.class_scores, dim=-1)[1]
+            preds = F.softmax(detection_output.class_scores, dim=-1)[:, 1]
             targets = (iou_scores >= self.config.metrics_match_threshold).long()
         
             self.val_precision(preds, targets)
