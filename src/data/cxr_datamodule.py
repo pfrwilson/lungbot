@@ -1,5 +1,5 @@
 
-from data.preprocessing import preprocessor_factory
+from src.data.preprocessing import preprocessor_factory
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
 from typing import List, Optional
