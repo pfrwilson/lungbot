@@ -17,17 +17,6 @@ from .object_detection import DetectionOutput, DetectionTrainingBatch, Detection
 from ...configs.schema import RPNConfig
 
 
-#@dataclass
-#class RPNConfig:
-#    image_input_size: int
-#    feature_map_size: int 
-#    feature_dim: int 
-#    hidden_dim: int 
-#    scales: Union[list, ListConfig]
-#    aspect_ratios: Union[list, ListConfig]
-#    nms_threshold: float
-#
-
 class RegionProposalNetwork(nn.Module, DetectionMixin):
 
     def __init__(self, config: RPNConfig):  
@@ -82,7 +71,7 @@ class RegionProposalNetwork(nn.Module, DetectionMixin):
         
         detection_output = self.propose_boxes(in_feature_map)
 
-        if not self.training: 
+        if not training: 
             detection_output = self.apply_nms(
                 detection_output,
                 self.config.nms_threshold,

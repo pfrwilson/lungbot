@@ -116,7 +116,7 @@ class DetectionMixin:
         h = h_a * torch.exp(t_h)
         
         proposed_boxes = torch.stack( [x, y, w, h], dim=-1 )
-        proposed_boxes = ops.box_convert(anchor_boxes, in_fmt='cxcywh', out_fmt=in_fmt)
+        proposed_boxes = ops.box_convert(proposed_boxes, in_fmt='cxcywh', out_fmt=in_fmt)
         return proposed_boxes
         
     def inverse_boxreg_transform(proposed_boxes, anchor_boxes, in_fmt='xywh'):
