@@ -91,7 +91,7 @@ class RPNModule(LightningModule):
             labels = training_batch.class_labels
             
             self.train_precision(preds, labels)
-            self.val_precision(preds, labels)
+            self.train_recall(preds, labels)
         
         self.log('train/loss', loss)
         self.log('train/precision', self.train_precision)
