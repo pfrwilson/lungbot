@@ -2,6 +2,5 @@
 # TODO 
 
 def preprocessor_factory(config):
-    pass
-
-
+    if config.equalize_hist:
+        return torchvision.transforms.functional.equalize
