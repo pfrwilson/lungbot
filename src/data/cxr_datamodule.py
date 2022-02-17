@@ -10,12 +10,14 @@ from .cxr_dataset import CXRDataset
 
 class CXRDataModule(LightningDataModule):
     
-    def __init__(self, root: str, batch_size: int):
+    def __init__(self, root: str, batch_size: int, preprocessing = None):
         
         self.root = root
         self.batch_size = batch_size
         self.collate_fn = lambda items: items   # return a list of pairs pixel_values, true_boxes
+        self.preprocessing = preprocessing if preprocessing is not None else Lambda(lambda im: im)
         self.transform = Compose([
+            self.preprocessing, 
             Resize(1024), 
             ToTensor(), 
             Normalize([0.485, 0.456, 0.406],
