@@ -2,32 +2,19 @@
 from omegaconf import DictConfig, ListConfig
 
 from pytorch_lightning import LightningModule
-from torchmetrics.detection.map import MeanAveragePrecision
 import torch
+from torch.nn import functional as F
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-from typing import Union, Sequence
 from dataclasses import dataclass
+
+from torchmetrics import Precision, Recall
 
 from .components.object_detection import DetectionOutput
 from .components.chexnet import CheXNet
-from .components.region_proposal_network import RegionProposalNetwork, RPNConfig
+from .components.region_proposal_network import RegionProposalNetwork
 from .objectives.rcnn_loss import RCNNLoss
-from .objectives.metric import DetectionMetric
 
 from ..configs.schema import RPNModuleConfig
-
-#@dataclass
-#class RPNModuleConfig:
-#    scales: Union[Sequence, ListConfig]
-#    aspect_ratios: Union[Sequence, ListConfig]
-#    freeze_chexnet: bool
-#    lambda_: float
-#    nms_iou_threshold: float
-#    num_training_examples_per_image: int 
-#    min_num_positive_examples: int
-#    positivity_threshold: float 
-#    negativity_threshold: float 
-#    lr: float    
 
 
 class RPNModule(LightningModule):
@@ -48,7 +35,12 @@ class RPNModule(LightningModule):
         
         self.loss_fn = RCNNLoss(lambda_=config.lambda_)
 
-        self.metrics = DetectionMetric()
+        self.train_recall = Recall()
+        self.train_precision = Precision()
+        self.val_recall = Recall()
+        self.val_precision = Precision()
+        self.test_recall = Recall()
+        self.test_precision = Precision()
 
         self.save_hyperparameters()
 
@@ -95,17 +87,15 @@ class RPNModule(LightningModule):
         
             loss += self.loss_fn.compute_from_batch(training_batch)
             
-            self.metrics.update(
-                training_batch.class_scores, 
-                training_batch.iou_scores_with_targets
-            )
+            preds = F.softmax(training_batch.class_scores, dim=-1)[1]
+            labels = training_batch.class_labels
             
-        metrics = self.metrics.compute()
+            self.train_precision(preds, labels)
+            self.val_precision(preds, labels)
         
-        for key in metrics.keys():  
-            self.log(f'train/{key}', metrics[key], prog_bar=True, logger=True)
-        
-        self.log('train/loss', loss, logger=True)
+        self.log('train/loss', loss)
+        self.log('train/precision', self.train_precision)
+        self.log('train/recall', self.train_recall)
         
         return loss
     
@@ -124,16 +114,14 @@ class RPNModule(LightningModule):
                 true_boxes, detection_output.proposed_boxes
             )
             
-            self.metrics.update(
-                detection_output.class_scores, 
-                iou_scores
-            )        
+            preds = F.softmax(detection_output.class_scores, dim=-1)[1]
+            targets = (iou_scores >= self.config.metrics_match_threshold).long()
         
-        metrics = self.metrics.compute()
+            self.val_precision(preds, targets)
+            self.val_recall(preds, targets)
         
-        for key in metrics.keys():  
-            self.log(f'val/{key}', metrics[key], prog_bar=True, logger=True)
-    
+        self.log('val/precition', self.val_precision, on_epoch=True)
+        self.log('val/recall', self.val_recall, on_epoch=True)
     
     def test_step(self, batch, batch_idx):
 
@@ -149,17 +137,15 @@ class RPNModule(LightningModule):
                 true_boxes, detection_output.proposed_boxes
             )
             
-            self.metrics.update(
-                detection_output.class_scores, 
-                iou_scores
-            )        
+            preds = F.softmax(detection_output.class_scores, dim=-1)[1]
+            targets = (iou_scores >= self.config.metrics_match_threshold).long()
         
-        metrics = self.metrics.compute()
+            self.val_precision(preds, targets)
+            self.val_recall(preds, targets)
         
-        for key in metrics.keys():  
-            self.log(f'test/{key}', metrics[key], prog_bar=True, logger=True)
+        self.log('val/precition', self.val_precision, on_epoch=True)
+        self.log('val/recall', self.val_recall, on_epoch=True)
         
             
-    def on_epoch_end(self) -> None:
-        self.metrics.reset()
+
 

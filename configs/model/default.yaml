@@ -18,3 +18,4 @@ rpn_module_config:
   positivity_threshold: 0.4
   negativity_threshold: 0.05
   lr: 1e-4
+  metrics_match_threshold: 0.5

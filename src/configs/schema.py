@@ -34,5 +34,7 @@ class RPNModuleConfig:
     positivity_threshold: float 
     negativity_threshold: float 
     lr: float    
+    
+    metrics_match_threshold: float
 
 cs.store(name='rpn_module_config', node=RPNModuleConfig, group='model')
