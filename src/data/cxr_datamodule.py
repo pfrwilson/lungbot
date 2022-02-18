@@ -1,4 +1,5 @@
 
+from omegaconf import DictConfig
 from src.data.preprocessing import preprocessor_factory
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
@@ -13,20 +14,12 @@ from .preprocessing import preprocessor_factory
 
 class CXRDataModule(LightningDataModule):
     
-    def __init__(self, root: str, batch_size: int, preprocessing_equalize_hist=False, preprocessing = None):
+    def __init__(self, root: str, batch_size: int, preprocessing: DictConfig):
         
         self.root = root
         self.batch_size = batch_size
         self.collate_fn = lambda items: items   # return a list of pairs pixel_values, true_boxes
-        self.preprocessing = preprocessor_factory(preprocessing_equalize_hist)
-        self.transform = Compose([
-            self.preprocessing, 
-            Resize(1024), 
-            ToTensor(), 
-            Normalize([0.485, 0.456, 0.406],
-                      [0.229, 0.224, 0.225]), 
-            Lambda(lambda pixel_values : repeat(pixel_values, 'c h w -> 1 c h w'))
-        ])
+        self.transform = preprocessor_factory(preprocessing)
         
     def setup(self, stage: Optional[str] = None) -> None:
         
@@ -42,7 +35,7 @@ class CXRDataModule(LightningDataModule):
         return DataLoader(
             self.train_ds, 
             batch_size = self.batch_size, 
-            collate_fn = self.collate_fn
+            collate_fn = self.collate_fn, 
         )      
         
     def val_dataloader(self):
