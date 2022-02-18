@@ -1,80 +1,94 @@
 
-
+from omegaconf import DictConfig, OmegaConf
 from torchmetrics import Metric
 import torch
+from abc import ABC
 from torch.nn import functional as F
+from typing import Dict
+
+from torchmetrics import AUROC, Precision, Recall
 
 
-class DetectionMetric(Metric):
+class DetectionMetricBase(Metric, ABC):
     
-    def __init__(
-        self, 
-        prob_threshold_for_detection=0.5, 
-        iou_threshold_for_detection=0.5, 
-    ):
+    def __init__(self):
+        
         super().__init__()
         
-        self.prob_threshold_for_detection=prob_threshold_for_detection
-        self.iou_threshold_for_detection=iou_threshold_for_detection
+        self.add_state('preds', default=torch.tensor([]))
+        self.add_state('targets', default=torch.tensor([]))
         
-        self.add_state('true_positives', default=torch.tensor(0))
-        self.add_state('true_negatives', default=torch.tensor(0))
-        self.add_state('false_positives', default=torch.tensor(0))
-        self.add_state('false_negatives', default=torch.tensor(0))
+    def update(self, preds, targets):
+        
+        self.preds = torch.concat([self.preds, preds], dim=0)
+        self.targets = torch.concat([self.targets, targets], dim=0)
+
+
+class PrecisionFROC(DetectionMetricBase):
     
-    def update(
-        self, 
-        objectness_scores,
-        iou_scores, 
-    ):
+    def __init__(self, fpr=None): 
         
-        object_probabilities = F.softmax(objectness_scores, dim=-1)[:, 1]
+        super().__init__()
+        
+        self.false_positive_rate = fpr
     
-        true_labels = \
-            (iou_scores >= self.iou_threshold_for_detection).long()
-        predicted_labels = \
-            (object_probabilities >= self.iou_threshold_for_detection).long()
-        
-        true_positives = torch.logical_and(
-            true_labels == 1, 
-            predicted_labels == 1
-        )
-        
-        true_negatives = torch.logical_and(
-            true_labels == 0, 
-            predicted_labels == 0, 
-        )
-        
-        false_positives = torch.logical_and(
-            true_labels == 0, 
-            predicted_labels == 1
-        )
-        
-        false_negatives = torch.logical_and(
-            true_labels == 1, 
-            predicted_labels == 0
-        )
-    
-        self.true_positives += torch.sum(true_positives)
-        self.false_positives += torch.sum(false_positives)
-        self.true_negatives += torch.sum(true_negatives)
-        self.false_negatives += torch.sum(false_negatives)
-        
-        
     def compute(self):
         
-        all_metrics = dict(
-            true_positives = self.true_positives, 
-            true_negatives = self.true_negatives, 
-            false_positives = self.false_positives, 
-            false_negatives = self.false_negatives, 
-            precision = self.true_positives / (self.true_positives + self.false_positives), 
-            recall = self.true_positives / (self.true_positives + self.false_negatives), 
-            total_detections = self.true_positives + self.false_positives, 
-            total_true_lables = self.true_positives + self.false_negatives,
-            total_proposals = self.true_positives + self.false_positives + self.true_negatives + self.false_negatives
-        )
+        thresholds = torch.arange(0, 1, 0.01)
+        false_positive_rates_by_threshold = []
+        precision_rates_by_threshold = []
         
-        return all_metrics
+        for threshold in thresholds:
+            
+            preds = (self.preds >= threshold).long()
+            targets = self.targets
+            
+            false_positives = torch.sum(
+                torch.logical_and(
+                    preds == 1, 
+                    targets == 0
+                )
+            )
+            
+            true_positives = torch.sum(
+                torch.logical_and(
+                    preds == 1, 
+                    targets == 1
+                )
+            )
+            
+            total_negatives = torch.sum(
+                targets == 0
+            )
 
-    
+            total_detections = torch.sum(
+                preds == 1
+            )
+
+            false_positive_rates_by_threshold.append(false_positives/total_negatives)
+            precision_rates_by_threshold.append(true_positives/total_detections)
+        
+        for idx, fpr in enumerate(false_positive_rates_by_threshold):
+            if fpr < self.false_positive_rate:
+                return precision_rates_by_threshold[idx]
+
+
+ALL_METRICS = {
+    'precision': Precision, 
+    'recall': Recall, 
+    'auroc': AUROC,
+    'precision_froc': PrecisionFROC,
+}
+
+def metric_factory(type, kwargs):  
+    return ALL_METRICS[type](**kwargs)
+
+def build_metrics_dict(config, prefix):
+    d = {}
+    for name, kwargs in config.items(): 
+        kwargs = OmegaConf.to_object(kwargs)
+        type = kwargs.pop('type')
+        metric = metric_factory(type, kwargs)
+        d[f'{prefix}/{name}'] = metric
+        
+    return torch.nn.ModuleDict(d)

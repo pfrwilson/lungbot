@@ -1,5 +1,5 @@
 
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from pytorch_lightning import LightningModule
 import torch
@@ -13,7 +13,7 @@ from .components.object_detection import DetectionOutput
 from .components.chexnet import CheXNet
 from .components.region_proposal_network import RegionProposalNetwork
 from .objectives.rcnn_loss import RCNNLoss
-
+from .objectives.metric import build_metrics_dict
 from ..configs.schema import RPNModuleConfig
 
 
@@ -25,7 +25,7 @@ class RPNModule(LightningModule):
         
         self.config = config
         self.rpn = RegionProposalNetwork(
-            config.rpn_config
+            config.rpn
         )
         
         self.chexnet = CheXNet()
@@ -35,13 +35,10 @@ class RPNModule(LightningModule):
         
         self.loss_fn = RCNNLoss(lambda_=config.lambda_)
 
-        self.train_recall = Recall()
-        self.train_precision = Precision()
-        self.val_recall = Recall()
-        self.val_precision = Precision()
-        self.test_recall = Recall()
-        self.test_precision = Precision()
-
+        self.train_metrics = build_metrics_dict(config.metrics, 'train')
+        self.val_metrics = build_metrics_dict(config.metrics, 'val')
+        self.test_metrics = build_metrics_dict(config.metrics, 'test')
+        
         self.save_hyperparameters()
 
     def configure_optimizers(self):
@@ -101,13 +98,13 @@ class RPNModule(LightningModule):
             preds = F.softmax(detection_output_for_metrics.class_scores, dim=-1)[:, 1]
             targets = (iou_scores >= self.config.metrics_match_threshold).long()
     
-            self.train_precision(preds, targets)
-            self.train_recall(preds, targets)
+            for name, metric in self.train_metrics.items():
+                metric.update(preds, targets)
         
-        self.log('train/loss', loss, on_epoch=True, on_step=True)
-        self.log('train/precision', self.train_precision, on_step=False,
-                 on_epoch=True)
-        self.log('train/recall', self.train_recall, on_step=False, 
+        for name, metric in self.train_metrics.items():
+            self.log(name, metric, on_step=False, on_epoch=True)
+                
+        self.log('loss', loss, on_step=True,
                  on_epoch=True)
         
         return loss
@@ -130,11 +127,11 @@ class RPNModule(LightningModule):
             preds = F.softmax(detection_output.class_scores, dim=-1)[:, 1]
             targets = (iou_scores >= self.config.metrics_match_threshold).long()
         
-            self.val_precision(preds, targets)
-            self.val_recall(preds, targets)
+            for name, metric in self.val_metrics.items():
+                metric.update(preds, targets)
         
-        self.log('val/precision', self.val_precision, on_epoch=True)
-        self.log('val/recall', self.val_recall, on_epoch=True)
+        for name, metric in self.val_metrics.items():
+            self.log(name, metric, on_step=False, on_epoch=True)
     
     def test_step(self, batch, batch_idx):
 
@@ -153,12 +150,10 @@ class RPNModule(LightningModule):
             preds = F.softmax(detection_output.class_scores, dim=-1)[:, 1]
             targets = (iou_scores >= self.config.metrics_match_threshold).long()
         
-            self.test_precision(preds, targets)
-            self.test_recall(preds, targets)
+            for name, metric in self.test_metrics.items():
+                metric.update(preds, targets)
         
-        self.log('test/precition', self.test_precision, on_epoch=True)
-        self.log('test/recall', self.test_recall, on_epoch=True)
-        
-            
+        for name, metric in self.test_metrics.items():
+            self.log(name, metric, on_step=False, on_epoch=True)      
 
 

@@ -1,9 +1,9 @@
 
 from dataclasses import dataclass
 from hydra.core.config_store import ConfigStore
-from omegaconf import ListConfig
+from omegaconf import ListConfig, DictConfig
 
-from typing import Union, Sequence, List
+from typing import Any, Union, Sequence, List
 
 cs = ConfigStore.instance()
 
@@ -25,7 +25,8 @@ class RPNConfig:
 @dataclass
 class RPNModuleConfig:
     
-    rpn_config: RPNConfig
+    rpn: RPNConfig
+    metrics: Any
     
     freeze_chexnet: bool
     lambda_: float
@@ -37,4 +38,4 @@ class RPNModuleConfig:
     
     metrics_match_threshold: float
 
-cs.store(name='rpn_module_config', node=RPNModuleConfig, group='model')
+cs.store(name='model', node=RPNModuleConfig)

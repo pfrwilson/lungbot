@@ -21,7 +21,7 @@ def train(config: DictConfig):
     )
     
     rpn = RPNModule(
-        config.model.rpn_module_config
+        config.model
     )
     
     datamodule = CXRDataModule(
@@ -30,7 +30,7 @@ def train(config: DictConfig):
     
     logger = WandbLogger(
         **config.logger
-    )
+    ) 
     
     callbacks = [
         EarlyStopping(**config.callbacks.early_stopping),
