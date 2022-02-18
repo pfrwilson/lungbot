@@ -13,12 +13,12 @@ from .preprocessing import preprocessor_factory
 
 class CXRDataModule(LightningDataModule):
     
-    def __init__(self, root: str, batch_size: int, preprocessing_equalize_hist=False, preprocessing = None):
+    def __init__(self, root: str, batch_size: int, preprocessing_equalize_hist=False, preprocessing_sharpen=False, preprocessing = None):
         
         self.root = root
         self.batch_size = batch_size
         self.collate_fn = lambda items: items   # return a list of pairs pixel_values, true_boxes
-        self.preprocessing = preprocessor_factory(preprocessing_equalize_hist)
+        self.preprocessing = Compose(preprocessor_factory(preprocessing_equalize_hist, preprocessing_sharpen))
         self.transform = Compose([
             self.preprocessing, 
             Resize(1024), 

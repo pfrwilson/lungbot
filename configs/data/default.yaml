@@ -1,3 +1,4 @@
 batch_size: 1
 
-preprocessing_equalize_hist: True
+preprocessing_equalize_hist: False
+preprocessing_sharpen: True
