@@ -125,7 +125,7 @@ class RegionProposalNetwork(nn.Module, DetectionMixin):
         
         indices = product(range(feature_map_size), range(feature_map_size))
 
-        base_boxes = torch.zeros((32, 32, 4))
+        base_boxes = torch.zeros((feature_map_size, feature_map_size, 4))
 
         for i, j in indices:
             base_boxes[i, j, :] = torch.tensor(base_image_(i, j))
