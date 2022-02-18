@@ -22,7 +22,7 @@ class CXRDataModule(LightningDataModule):
         self.transform = Compose([
             self.preprocessing, 
             Resize(1024), 
-            ToTensor(), 
+            #ToTensor(), 
             Normalize([0.485, 0.456, 0.406],
                       [0.229, 0.224, 0.225]), 
             Lambda(lambda pixel_values : repeat(pixel_values, 'c h w -> 1 c h w'))
