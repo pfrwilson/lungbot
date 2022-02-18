@@ -17,5 +17,5 @@ model:
   
 trainer:
   min_epochs: 50
-  max_epochs: none
+  max_epochs: null
 
