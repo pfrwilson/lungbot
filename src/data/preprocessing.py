@@ -13,6 +13,6 @@ def preprocessor_factory(equalize_hist, preprocessing_sharpen):
                                 [1, 0, -1]])
         conv = torch.nn.Conv2d(1, 1, 3, bias=False)
         with torch.no_grad():
-            conv.weight = torch.nn.Parameter(filter)
+            conv.weight = filter
         transforms += [conv]
     return transforms
