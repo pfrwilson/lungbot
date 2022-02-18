@@ -4,7 +4,7 @@ import torch
 # TODO 
 
 def preprocessor_factory(equalize_hist, preprocessing_sharpen):
-    transforms = []
+    transforms = [torch.Tensor]
     if equalize_hist:
         transforms += [torchvision.transforms.functional.equalize]
     if preprocessing_sharpen:
