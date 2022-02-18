@@ -21,8 +21,8 @@ model:
 
     
 trainer:
-  min_epochs: 200
-  max_epochs: 200
+  min_epochs: 50
+  max_epochs: null
   accumulate_grad_batches: 256
 
 run_name: feb_18_res_224_positive_bias_frozen_chex
