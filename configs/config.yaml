@@ -10,7 +10,6 @@ defaults:
   - callbacks: default
   - seed: default
   - logger: wandb
-  - experiment: default
 
 print_config: yes
 disable_warnings: yes

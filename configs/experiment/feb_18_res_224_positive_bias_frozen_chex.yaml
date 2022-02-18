@@ -25,5 +25,5 @@ trainer:
   max_epochs: 200
   accumulate_grad_batches: 256
 
-run_name: feb_17_conv_input_224.yaml
+run_name: feb_18_res_224_positive_bias_frozen_chex
 
