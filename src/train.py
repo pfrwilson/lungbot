@@ -1,3 +1,4 @@
+from src.data.preprocessing import preprocessor_factory
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 import pytorch_lightning

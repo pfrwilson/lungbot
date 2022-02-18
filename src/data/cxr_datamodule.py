@@ -1,4 +1,5 @@
 
+from src.data.preprocessing import preprocessor_factory
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
 from typing import List, Optional
@@ -12,12 +13,12 @@ from .preprocessing import preprocessor_factory
 
 class CXRDataModule(LightningDataModule):
     
-    def __init__(self, root: str, batch_size: int, preprocessing_config = None):
+    def __init__(self, root: str, batch_size: int, preprocessing_equalize_hist=False, preprocessing = None):
         
         self.root = root
         self.batch_size = batch_size
         self.collate_fn = lambda items: items   # return a list of pairs pixel_values, true_boxes
-        self.preprocessing = preprocessor_factory(preprocessing_config)
+        self.preprocessing = preprocessor_factory(preprocessing_equalize_hist)
         self.transform = Compose([
             self.preprocessing, 
             Resize(1024), 
@@ -37,6 +38,7 @@ class CXRDataModule(LightningDataModule):
                                   transform=self.transform)
 
     def train_dataloader(self):
+        #print(self.transform)
         return DataLoader(
             self.train_ds, 
             batch_size = self.batch_size, 
