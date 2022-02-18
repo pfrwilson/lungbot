@@ -25,7 +25,7 @@ metrics:
 
 freeze_chexnet: yes
 lambda_: 10
-num_training_examples_per_image: 64
+num_training_examples_per_image: 32
 min_num_positive_examples: 1
 positivity_threshold: 0.5             # for selecting training examples
 negativity_threshold: 0.05            # for selecting training examples
