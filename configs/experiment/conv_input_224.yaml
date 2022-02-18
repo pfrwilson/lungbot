@@ -1,4 +1,18 @@
 # @package _global_
 
-data: preprocessing: chexnet_input_resolution: 224
-model: rpn_module_config: rpn_config: feature_map_size: 7
+data: 
+  preprocessing: 
+    chexnet_input_resolution: 224
+
+model: 
+  rpn_module_config: 
+    
+    rpn_config: 
+      feature_map_size: 7
+      nms_threshold: 0
+
+    lr: 1e-5
+    lambda_: 1
+
+name: conv_input_224.yaml
+
