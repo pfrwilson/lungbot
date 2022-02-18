@@ -1,3 +1,5 @@
 batch_size: 1
 
-preprocessing_equalize_hist: True
+preprocessing:
+  chexnet_input_resolution: 1024
+  equalize_hist: no
