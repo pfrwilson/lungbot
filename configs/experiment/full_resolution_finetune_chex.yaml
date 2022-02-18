@@ -1,0 +1,22 @@
+# @package _global_
+
+data: 
+  preprocessing: 
+    chexnet_input_resolution: 224
+
+model: 
+  rpn: 
+    aspect_ratios: [1, 1.25, 1.5, .66, .75]
+    feature_map_size: 7
+    nms_threshold: 0
+    scales: [.1, .2, .3, .4, .5]
+
+  freeze_chexnet: no
+  lr: 1e-6
+  lambda_: 1
+  
+trainer:
+  min_epochs: 50
+
+
+
