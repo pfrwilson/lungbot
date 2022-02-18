@@ -3,7 +3,7 @@ import os
 import pytest
 from skimage.color import gray2rgb
 
-ROOT = '/Users/paulwilson/data/node_21/cxr_images/proccessed_data'
+ROOT = '/home/ayesha/Desktop/node21/cxr_images/proccessed_data'
 
 @pytest.fixture
 def root():
