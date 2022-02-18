@@ -18,4 +18,4 @@ model:
 trainer:
   min_epochs: 50
   max_epochs: null
-
+  accumulate_grad_batches: 256
