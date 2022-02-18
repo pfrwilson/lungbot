@@ -13,9 +13,9 @@ rpn_module_config:
 
   freeze_chexnet: yes
   lambda_: 10
-  num_training_examples_per_image: 32
-  min_num_positive_examples: 4
-  positivity_threshold: 0.4
+  num_training_examples_per_image: 64
+  min_num_positive_examples: 1
+  positivity_threshold: 0.5
   negativity_threshold: 0.05
   lr: 1e-4
   metrics_match_threshold: 0.5

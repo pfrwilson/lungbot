@@ -8,11 +8,15 @@ model:
   rpn_module_config: 
     
     rpn_config: 
+      aspect_ratios: [1, 1.25, 1.5, .66, .75]
       feature_map_size: 7
       nms_threshold: 0
+      scales: [.1, .2, .3, .4, .5]
 
+    freeze_chexnet: yes
     lr: 1e-5
     lambda_: 1
+    
 
-name: conv_input_224.yaml
+name: feb_17_conv_input_224.yaml
 
