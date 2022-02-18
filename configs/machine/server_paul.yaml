@@ -1,0 +1,4 @@
+# @package _global_
+
+data:
+  root: /home/paulw/data/node-21/proccessed_data
