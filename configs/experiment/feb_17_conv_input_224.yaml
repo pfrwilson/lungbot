@@ -13,10 +13,13 @@ model:
       nms_threshold: 0
       scales: [.1, .2, .3, .4, .5]
 
-    freeze_chexnet: yes
-    lr: 1e-5
+    freeze_chexnet: no
+    lr: 1e-6
     lambda_: 1
     
+trainer:
+  min_epochs: 200
+  max_epochs: 200
 
 name: feb_17_conv_input_224.yaml
 
