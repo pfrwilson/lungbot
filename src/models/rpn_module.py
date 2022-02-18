@@ -72,7 +72,8 @@ class RPNModule(LightningModule):
             feature_maps = self.chexnet(pixel_values)
             
             detection_output = self.rpn(feature_maps, training=True)
-        
+
+            # compute loss for batch
             training_batch = self.rpn.get_training_batch(
                 detection_output, 
                 true_boxes, 
@@ -84,14 +85,24 @@ class RPNModule(LightningModule):
             training_batch = self.rpn.select_training_batch_subset(
                 training_batch, self.config.num_training_examples_per_image
             )
-        
+
             loss += self.loss_fn.compute_from_batch(training_batch)
             
-            preds = F.softmax(training_batch.class_scores, dim=-1)[:, 1]
-            labels = training_batch.class_labels
+            # compute metrics for batch
+            detection_output_for_metrics = self.rpn.apply_nms(
+                detection_output,
+                self.rpn.config.nms_threshold,
+            )
             
-            self.train_precision(preds, labels)
-            self.train_recall(preds, labels)
+            _, iou_scores = self.rpn.match_proposed_boxes_to_true(
+                true_boxes, detection_output_for_metrics.proposed_boxes
+            )
+            
+            preds = F.softmax(detection_output_for_metrics.class_scores, dim=-1)[:, 1]
+            targets = (iou_scores >= self.config.metrics_match_threshold).long()
+    
+            self.train_precision(preds, targets)
+            self.train_recall(preds, targets)
         
         self.log('train/loss', loss)
         self.log('train/precision', self.train_precision, on_step=False,
